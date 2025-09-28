@@ -55,7 +55,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
         className={`mt-1 w-5 h-5 rounded focus:ring-2 transition-colors ${
           isOverdue && !todo.completed
             ? 'text-red-500 bg-white dark:bg-slate-600 border-red-300 dark:border-red-600 focus:ring-red-500'
-            : 'text-indigo-600 bg-white dark:bg-slate-600 border-slate-300 dark:border-slate-500 focus:ring-indigo-500'
+            : 'text-blue-600 bg-white dark:bg-slate-600 border-slate-300 dark:border-slate-500 focus:ring-blue-500'
         }`}
       />
       
@@ -111,7 +111,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
             {todo.tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full"
+                className="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full"
               >
                 {tag}
               </span>
@@ -135,7 +135,7 @@ const TodoItem: React.FC<TodoItemProps> = ({
         
         <button
           onClick={() => onDelete(todo.id)}
-          className="p-1.5 text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors hover:scale-110"
+            className="p-1.5 text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors hover:scale-110"
           aria-label="Delete todo"
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

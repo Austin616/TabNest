@@ -165,7 +165,7 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick }) => {
             {filters.mode !== 'all' && (
               <button
                 onClick={() => changeFilterMode('all')}
-                className="mt-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
               >
                 Show all tasks
               </button>

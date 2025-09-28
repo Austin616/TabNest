@@ -50,7 +50,7 @@ const TodoFilters: React.FC<TodoFiltersProps> = ({
             onClick={() => onFilterModeChange('all')}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
               filters.mode === 'all'
-                ? 'bg-indigo-500 text-white shadow-sm'
+                ? 'bg-blue-500 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-600/60'
             }`}
           >
@@ -61,7 +61,7 @@ const TodoFilters: React.FC<TodoFiltersProps> = ({
             onClick={() => onFilterModeChange('active')}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
               filters.mode === 'active'
-                ? 'bg-indigo-500 text-white shadow-sm'
+                ? 'bg-blue-500 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-600/60'
             }`}
           >
@@ -72,7 +72,7 @@ const TodoFilters: React.FC<TodoFiltersProps> = ({
             onClick={() => onFilterModeChange('completed')}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
               filters.mode === 'completed'
-                ? 'bg-indigo-500 text-white shadow-sm'
+                ? 'bg-blue-500 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-600/60'
             }`}
           >

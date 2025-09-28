@@ -44,7 +44,7 @@ const TodoHeader: React.FC<TodoHeaderProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => onNavigateDate('prev')}
-            className="p-2 rounded-lg bg-white/60 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 hover:scale-110 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
+            className="p-2 rounded-lg bg-white/60 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-700/80 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 hover:scale-110 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
             aria-label={`Previous ${navigation.viewMode}`}
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -58,7 +58,7 @@ const TodoHeader: React.FC<TodoHeaderProps> = ({
           
           <button
             onClick={() => onNavigateDate('next')}
-            className="p-2 rounded-lg bg-white/60 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 hover:scale-110 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
+            className="p-2 rounded-lg bg-white/60 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400 hover:bg-white/80 dark:hover:bg-slate-700/80 hover:text-slate-800 dark:hover:text-slate-200 transition-all duration-200 hover:scale-110 shadow-sm border border-slate-200/50 dark:border-slate-600/50"
             aria-label={`Next ${navigation.viewMode}`}
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -72,7 +72,7 @@ const TodoHeader: React.FC<TodoHeaderProps> = ({
             onClick={() => onViewModeChange('day')}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
               navigation.viewMode === 'day'
-                ? 'bg-indigo-500 text-white shadow-sm'
+                ? 'bg-blue-500 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-600/60'
             }`}
           >
@@ -82,7 +82,7 @@ const TodoHeader: React.FC<TodoHeaderProps> = ({
             onClick={() => onViewModeChange('week')}
             className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
               navigation.viewMode === 'week'
-                ? 'bg-indigo-500 text-white shadow-sm'
+                ? 'bg-blue-500 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-600/60'
             }`}
           >
@@ -93,7 +93,7 @@ const TodoHeader: React.FC<TodoHeaderProps> = ({
 
       <button
         onClick={onAddTask}
-        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
+        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-md hover:shadow-lg"
       >
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
