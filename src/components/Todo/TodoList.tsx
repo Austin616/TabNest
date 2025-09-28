@@ -1,12 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Todo, ViewMode, FilterMode, DateNavigation, TodoFilters } from '../../types/todo'
+import { useTodos } from '../../contexts/TodoContext'
 import TodoHeader from './TodoHeader'
-import TodoModal from './TodoModal'
 import TodoItem from './TodoItem'
 import TodoFiltersComponent from './TodoFilters'
 
-const TodoList: React.FC = () => {
-  const [todos, setTodos] = useState<Todo[]>([])
+interface TodoListProps {
+  onAddTaskClick: () => void
+}
+
+const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick }) => {
+  const { todos, toggleTodoComplete, deleteTodo } = useTodos()
   const [navigation, setNavigation] = useState<DateNavigation>({
     currentDate: new Date(),
     viewMode: 'day'
@@ -15,30 +19,6 @@ const TodoList: React.FC = () => {
     mode: 'all',
     showFilters: false
   })
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
-  // Load todos from localStorage on mount
-  useEffect(() => {
-    const savedTodos = localStorage.getItem('tabnest-todos')
-    if (savedTodos) {
-      try {
-        const parsedTodos = JSON.parse(savedTodos).map((todo: any) => ({
-          ...todo,
-          createdAt: new Date(todo.createdAt),
-          dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
-          reminderDays: todo.reminderDays || undefined
-        }))
-        setTodos(parsedTodos)
-      } catch (error) {
-        console.error('Failed to load todos from localStorage:', error)
-      }
-    }
-  }, [])
-
-  // Save todos to localStorage when todos change
-  useEffect(() => {
-    localStorage.setItem('tabnest-todos', JSON.stringify(todos))
-  }, [todos])
 
   // Helper function to check if a task should be shown based on reminder days
   const shouldShowTask = (todo: Todo, targetDate: Date) => {
@@ -65,26 +45,6 @@ const TodoList: React.FC = () => {
     }
   }
 
-  const addTodo = (todoData: Omit<Todo, 'id' | 'createdAt'>) => {
-    const newTodo: Todo = {
-      ...todoData,
-      id: `todo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date()
-    }
-    setTodos(prevTodos => [...prevTodos, newTodo])
-  }
-
-  const toggleTodoComplete = (id: string) => {
-    setTodos(prevTodos =>
-      prevTodos.map(todo =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    )
-  }
-
-  const deleteTodo = (id: string) => {
-    setTodos(prevTodos => prevTodos.filter(todo => todo.id !== id))
-  }
 
   const navigateDate = (direction: 'prev' | 'next') => {
     setNavigation(prev => {
@@ -110,13 +70,6 @@ const TodoList: React.FC = () => {
     setFilters(prev => ({ ...prev, showFilters: !prev.showFilters }))
   }
 
-  const openModal = () => {
-    setIsModalOpen(true)
-  }
-
-  const closeModal = () => {
-    setIsModalOpen(false)
-  }
 
   // Filter todos based on current view and filters
   const filteredTodos = useMemo(() => {
@@ -179,7 +132,7 @@ const TodoList: React.FC = () => {
         navigation={navigation}
         onNavigateDate={navigateDate}
         onViewModeChange={changeViewMode}
-        onAddTask={openModal}
+        onAddTask={onAddTaskClick}
       />
 
       <TodoFiltersComponent
@@ -242,13 +195,6 @@ const TodoList: React.FC = () => {
         </div>
       )}
 
-      {/* Add Task Modal */}
-      <TodoModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        onAddTodo={addTodo}
-        currentDate={navigation.currentDate}
-      />
     </div>
   )
 }
