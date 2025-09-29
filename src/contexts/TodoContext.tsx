@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { Todo } from '../types/todo'
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import type { Todo } from '../types/todo'
 
 interface TodoContextType {
   todos: Todo[]
@@ -10,6 +10,7 @@ interface TodoContextType {
 
 const TodoContext = createContext<TodoContextType | undefined>(undefined)
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTodos = () => {
   const context = useContext(TodoContext)
   if (context === undefined) {
@@ -30,7 +31,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     const savedTodos = localStorage.getItem('tabnest-todos')
     if (savedTodos) {
       try {
-        const parsedTodos = JSON.parse(savedTodos).map((todo: any) => ({
+        const parsedTodos = JSON.parse(savedTodos).map((todo: Todo) => ({
           ...todo,
           createdAt: new Date(todo.createdAt),
           dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,

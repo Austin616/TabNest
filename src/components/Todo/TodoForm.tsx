@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
-import { Todo } from '../../types/todo'
+import type { Todo } from '../../types/todo'
 
 interface TodoFormProps {
   onAddTodo: (todo: Omit<Todo, 'id' | 'createdAt'>) => void
   currentDate: Date
 }
 
-const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo, currentDate }) => {
+const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
   const [text, setText] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState('')
@@ -22,7 +22,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo, currentDate }) => {
       description: description.trim() || undefined,
       completed: false,
       dueDate: dueDate ? new Date(dueDate) : undefined,
-      reminder: reminder ? new Date(reminder) : undefined,
+      reminderDays: reminder ? parseInt(reminder) : undefined,
       tags: []
     }
 

@@ -1,5 +1,5 @@
 import React from 'react'
-import { TodoFilters as TodoFiltersType, FilterMode } from '../../types/todo'
+import type { TodoFilters as TodoFiltersType, FilterMode } from '../../types/todo'
 
 interface TodoFiltersProps {
   filters: TodoFiltersType

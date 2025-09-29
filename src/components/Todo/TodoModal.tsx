@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Todo } from '../../types/todo'
+import type { Todo } from '../../types/todo'
 
 interface TodoModalProps {
   isOpen: boolean
@@ -11,8 +11,7 @@ interface TodoModalProps {
 const TodoModal: React.FC<TodoModalProps> = ({
   isOpen,
   onClose,
-  onAddTodo,
-  currentDate
+  onAddTodo
 }) => {
   const [text, setText] = useState('')
   const [description, setDescription] = useState('')

@@ -1,0 +1,10 @@
+{
+  "name": "tabnest-extension",
+  "version": "1.0.0",
+  "description": "Build scripts for TabNest Chrome Extension",
+  "scripts": {
+    "build:extension": "vite build --config vite.config.extension.ts",
+    "dev:extension": "vite --config vite.config.extension.ts",
+    "preview:extension": "vite preview --config vite.config.extension.ts"
+  }
+}

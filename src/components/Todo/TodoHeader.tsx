@@ -1,5 +1,5 @@
 import React from 'react'
-import { ViewMode, DateNavigation } from '../../types/todo'
+import type { ViewMode, DateNavigation } from '../../types/todo'
 
 interface TodoHeaderProps {
   navigation: DateNavigation

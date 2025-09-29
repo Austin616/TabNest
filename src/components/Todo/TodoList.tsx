@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Todo, ViewMode, FilterMode, DateNavigation, TodoFilters } from '../../types/todo'
+import type { Todo, ViewMode, FilterMode, DateNavigation, TodoFilters } from '../../types/todo'
 import { useTodos } from '../../contexts/TodoContext'
 import TodoHeader from './TodoHeader'
 import TodoItem from './TodoItem'
