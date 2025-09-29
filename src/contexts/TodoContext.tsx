@@ -25,29 +25,48 @@ interface TodoProviderProps {
 
 export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   const [todos, setTodos] = useState<Todo[]>([])
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  // Load todos from localStorage on mount
+  // Load todos from Chrome storage on mount
   useEffect(() => {
-    const savedTodos = localStorage.getItem('tabnest-todos')
-    if (savedTodos) {
+    const loadTodos = async () => {
       try {
-        const parsedTodos = JSON.parse(savedTodos).map((todo: Todo) => ({
-          ...todo,
-          createdAt: new Date(todo.createdAt),
-          dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
-          reminderDays: todo.reminderDays || undefined
-        }))
-        setTodos(parsedTodos)
+        const result = await chrome.storage.local.get(['tabnest-todos'])
+        const savedTodos = result['tabnest-todos']
+        if (savedTodos && Array.isArray(savedTodos)) {
+          const parsedTodos = savedTodos.map((todo: Todo) => ({
+            ...todo,
+            createdAt: new Date(todo.createdAt),
+            dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
+            reminderDays: todo.reminderDays || undefined
+          }))
+          setTodos(parsedTodos)
+        }
+        setIsLoaded(true)
       } catch (error) {
-        console.error('Failed to load todos from localStorage:', error)
+        console.error('Failed to load todos from Chrome storage:', error)
+        setIsLoaded(true)
       }
     }
+
+    loadTodos()
   }, [])
 
-  // Save todos to localStorage when todos change
+  // Save todos to Chrome storage when todos change
   useEffect(() => {
-    localStorage.setItem('tabnest-todos', JSON.stringify(todos))
-  }, [todos])
+    const saveTodos = async () => {
+      try {
+        await chrome.storage.local.set({ 'tabnest-todos': todos })
+      } catch (error) {
+        console.error('Failed to save todos to Chrome storage:', error)
+      }
+    }
+
+    // Only save after initial load to avoid overwriting with empty array
+    if (isLoaded) {
+      saveTodos()
+    }
+  }, [todos, isLoaded])
 
   const addTodo = (todoData: Omit<Todo, 'id' | 'createdAt'>) => {
     const newTodo: Todo = {

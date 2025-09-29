@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { ClipboardList } from 'lucide-react'
 import type { Todo, ViewMode, FilterMode, DateNavigation, TodoFilters } from '../../types/todo'
 import { useTodos } from '../../contexts/TodoContext'
 import TodoHeader from './TodoHeader'
@@ -148,9 +149,7 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick }) => {
         {filteredTodos.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-slate-400 dark:text-slate-500 mb-2">
-              <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-              </svg>
+              <ClipboardList className="w-16 h-16 mx-auto mb-4 opacity-50" />
             </div>
             <p className="text-slate-500 dark:text-slate-400 italic">
               {filters.mode === 'completed' 

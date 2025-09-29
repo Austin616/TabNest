@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { ExternalLink, ClipboardList } from 'lucide-react'
 import type { Todo } from '../../types/todo'
  
 
@@ -134,9 +135,7 @@ const Popup: React.FC = () => {
             className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/70 transition-all duration-200"
             title="Open Dashboard"
           >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
-            </svg>
+            <ExternalLink className="w-4 h-4" />
           </button>
         </div>
         
@@ -185,9 +184,7 @@ const Popup: React.FC = () => {
           {todayTodos.length === 0 ? (
             <div className="text-center py-8">
               <div className="text-slate-400 dark:text-slate-500 mb-2">
-                <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-                </svg>
+                <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-50" />
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 No tasks for today
