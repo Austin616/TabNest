@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { ExternalLink, ClipboardList, Settings } from 'lucide-react'
+import { ExternalLink, ClipboardList, Settings, Calendar, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTodos } from '../../contexts/TodoContext'
 import type { Todo } from '../../types/todo'
+
+type ViewMode = 'day' | 'week'
  
 
 const Popup: React.FC = () => {
@@ -12,6 +14,8 @@ const Popup: React.FC = () => {
   const [reminderDays, setReminderDays] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [viewMode, setViewMode] = useState<ViewMode>('day')
+  const [currentDate, setCurrentDate] = useState(new Date())
 
   // Create date from input string without timezone issues
   const createDateFromInput = (dateString: string) => {
@@ -22,18 +26,29 @@ const Popup: React.FC = () => {
     return date
   }
 
-  // Format due date for display
+  // Format due date for display (matching main dashboard)
   const formatDueDate = (date: Date) => {
     const today = new Date()
-    const tomorrow = new Date(today)
-    tomorrow.setDate(today.getDate() + 1)
+    today.setHours(0, 0, 0, 0)
     
-    if (date.toDateString() === today.toDateString()) {
-      return 'Today'
-    } else if (date.toDateString() === tomorrow.toDateString()) {
-      return 'Tomorrow'
+    const dueDate = new Date(date)
+    dueDate.setHours(0, 0, 0, 0)
+    
+    const diffTime = dueDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) {
+      return 'Due today'
+    } else if (diffDays === 1) {
+      return 'Due tomorrow'
+    } else if (diffDays === -1) {
+      return 'Due yesterday'
+    } else if (diffDays < 0) {
+      return `${Math.abs(diffDays)} days overdue`
+    } else if (diffDays <= 7) {
+      return `Due in ${diffDays} days`
     } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      return `Due on ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
     }
   }
 
@@ -42,6 +57,51 @@ const Popup: React.FC = () => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
+
+  // Navigation functions
+  const navigateDate = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev)
+      if (viewMode === 'day') {
+        newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1))
+      } else {
+        newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7))
+      }
+      return newDate
+    })
+  }
+
+  // Format current date for display
+  const formatCurrentDate = () => {
+    if (viewMode === 'day') {
+      const today = new Date()
+      if (currentDate.toDateString() === today.toDateString()) {
+        return 'Today'
+      } else {
+        return currentDate.toLocaleDateString('en-US', { 
+          weekday: 'short', 
+          month: 'short', 
+          day: 'numeric' 
+        })
+      }
+    } else {
+      // Week view
+      const startOfWeek = new Date(currentDate)
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay())
+      
+      const endOfWeek = new Date(startOfWeek)
+      endOfWeek.setDate(startOfWeek.getDate() + 6)
+      
+      const startMonth = startOfWeek.toLocaleDateString('en-US', { month: 'short' })
+      const endMonth = endOfWeek.toLocaleDateString('en-US', { month: 'short' })
+      
+      if (startMonth === endMonth) {
+        return `${startMonth} ${startOfWeek.getDate()}-${endOfWeek.getDate()}`
+      } else {
+        return `${startMonth} ${startOfWeek.getDate()} - ${endMonth} ${endOfWeek.getDate()}`
+      }
+    }
+  }
 
   const addQuickTask = (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,15 +158,59 @@ const Popup: React.FC = () => {
     })
   }
 
-  const todayTodos = todos.filter(todo => {
+  // Helper function to check if task should be shown based on reminder settings
+  const shouldShowTask = (todo: Todo, targetDate: Date) => {
     if (!todo.dueDate) return true // Show tasks without due dates
+    
     const today = new Date()
-    const todoDate = new Date(todo.dueDate)
-    return todoDate.toDateString() === today.toDateString()
+    today.setHours(0, 0, 0, 0)
+    
+    const dueDate = new Date(todo.dueDate)
+    dueDate.setHours(0, 0, 0, 0)
+    
+    const checkDate = new Date(targetDate)
+    checkDate.setHours(0, 0, 0, 0)
+    
+    if (!todo.reminderDays || todo.reminderDays === 0) {
+      // No reminder - show if due date matches target date
+      return checkDate.getTime() === dueDate.getTime()
+    }
+    
+    // Calculate reminder start date
+    const reminderStartDate = new Date(dueDate)
+    reminderStartDate.setDate(dueDate.getDate() - todo.reminderDays)
+    
+    // Show task if target date is within the reminder range
+    return checkDate >= reminderStartDate && checkDate <= dueDate
+  }
+
+  // Filter todos based on view mode
+  const filteredTodos = todos.filter(todo => {
+    if (viewMode === 'day') {
+      // Day view - show tasks for selected date
+      return shouldShowTask(todo, currentDate)
+    } else {
+      // Week view - show tasks for selected week
+      const startOfWeek = new Date(currentDate)
+      startOfWeek.setDate(currentDate.getDate() - currentDate.getDay()) // Sunday
+      
+      const endOfWeek = new Date(startOfWeek)
+      endOfWeek.setDate(startOfWeek.getDate() + 6) // Saturday
+      
+      // Check each day of the week to see if task should be shown
+      for (let i = 0; i < 7; i++) {
+        const checkDate = new Date(startOfWeek)
+        checkDate.setDate(startOfWeek.getDate() + i)
+        if (shouldShowTask(todo, checkDate)) {
+          return true
+        }
+      }
+      return false
+    }
   })
 
-  const activeTodos = todayTodos.filter(todo => !todo.completed)
-  const completedTodos = todayTodos.filter(todo => todo.completed)
+  const activeTodos = filteredTodos.filter(todo => !todo.completed)
+  const completedTodos = filteredTodos.filter(todo => todo.completed)
 
   return (
     <div className="w-80 min-h-96 max-h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 text-slate-900 dark:text-slate-100">
@@ -122,6 +226,57 @@ const Popup: React.FC = () => {
             title="Open Dashboard"
           >
             <ExternalLink className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* View Mode Toggle */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('day')}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+                viewMode === 'day'
+                  ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <Calendar className="w-3 h-3" />
+              Day
+            </button>
+            <button
+              onClick={() => setViewMode('week')}
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+                viewMode === 'week'
+                  ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              <CalendarDays className="w-3 h-3" />
+              Week
+            </button>
+          </div>
+        </div>
+
+        {/* Date Navigation */}
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => navigateDate('prev')}
+            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200"
+            title={`Previous ${viewMode}`}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          
+          <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            {formatCurrentDate()}
+          </div>
+          
+          <button
+            onClick={() => navigateDate('next')}
+            className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200"
+            title={`Next ${viewMode}`}
+          >
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
         
@@ -216,7 +371,10 @@ const Popup: React.FC = () => {
       <div className="p-4 flex-1 overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-            Today's Tasks
+            {viewMode === 'day' 
+              ? (currentDate.toDateString() === new Date().toDateString() ? "Today's Tasks" : `${formatCurrentDate()} Tasks`)
+              : "Week's Tasks"
+            }
           </h3>
           <span className="text-xs text-slate-500 dark:text-slate-400">
             {activeTodos.length} active
@@ -224,13 +382,16 @@ const Popup: React.FC = () => {
         </div>
 
         <div className="space-y-2">
-          {todayTodos.length === 0 ? (
+          {filteredTodos.length === 0 ? (
             <div className="text-center py-8">
               <div className="text-slate-400 dark:text-slate-500 mb-2">
                 <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-50" />
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                No tasks for today
+                {viewMode === 'day' 
+                  ? (currentDate.toDateString() === new Date().toDateString() ? 'No tasks for today' : `No tasks for ${formatCurrentDate()}`)
+                  : 'No tasks for this week'
+                }
               </p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
                 Add a task above to get started
