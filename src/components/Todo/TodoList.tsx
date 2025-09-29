@@ -21,30 +21,6 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick }) => {
     showFilters: false
   })
 
-  // Helper function to check if a task should be shown based on reminder days
-  const shouldShowTask = (todo: Todo, targetDate: Date) => {
-    if (!todo.dueDate) {
-      // Tasks without due dates only show on today
-      return targetDate.toDateString() === new Date().toDateString()
-    }
-
-    const dueDate = new Date(todo.dueDate)
-    dueDate.setHours(0, 0, 0, 0)
-    
-    const checkDate = new Date(targetDate)
-    checkDate.setHours(0, 0, 0, 0)
-
-    if (todo.reminderDays) {
-      // Show task from reminderDays before due date until due date
-      const reminderStartDate = new Date(dueDate)
-      reminderStartDate.setDate(dueDate.getDate() - todo.reminderDays)
-      
-      return checkDate >= reminderStartDate && checkDate <= dueDate
-    } else {
-      // No reminder - only show on due date
-      return checkDate.getTime() === dueDate.getTime()
-    }
-  }
 
 
   const navigateDate = (direction: 'prev' | 'next') => {
@@ -72,33 +48,35 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick }) => {
   }
 
 
-  // Filter todos based on current view and filters
+  // Check if task should be shown based on reminder settings
+  const shouldShowTask = (todo: Todo) => {
+    if (!todo.dueDate) return true // Show tasks without due dates
+    
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const dueDate = new Date(todo.dueDate)
+    dueDate.setHours(0, 0, 0, 0)
+    
+    if (!todo.reminderDays || todo.reminderDays === 0) {
+      // No reminder - show all tasks
+      return true
+    }
+    
+    // Calculate reminder start date
+    const reminderStartDate = new Date(dueDate)
+    reminderStartDate.setDate(dueDate.getDate() - todo.reminderDays)
+    
+    // Show task if today is within the reminder range (reminder start date to due date)
+    return today >= reminderStartDate && today <= dueDate
+  }
+
+  // Filter todos based on completion status and reminder settings
   const filteredTodos = useMemo(() => {
     let filtered = todos
 
-    // Filter by date based on view mode
-    if (navigation.viewMode === 'day') {
-      filtered = todos.filter(todo => shouldShowTask(todo, navigation.currentDate))
-    } else {
-      // Week view - show tasks for the current week
-      const startOfWeek = new Date(navigation.currentDate)
-      startOfWeek.setDate(navigation.currentDate.getDate() - navigation.currentDate.getDay())
-      
-      const endOfWeek = new Date(startOfWeek)
-      endOfWeek.setDate(startOfWeek.getDate() + 6)
-      
-      filtered = todos.filter(todo => {
-        // Check each day of the week to see if task should be shown
-        for (let i = 0; i < 7; i++) {
-          const checkDate = new Date(startOfWeek)
-          checkDate.setDate(startOfWeek.getDate() + i)
-          if (shouldShowTask(todo, checkDate)) {
-            return true
-          }
-        }
-        return false
-      })
-    }
+    // Filter by reminder settings first
+    filtered = filtered.filter(shouldShowTask)
 
     // Filter by completion status
     if (filters.mode === 'active') {
@@ -122,7 +100,7 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick }) => {
       
       return b.createdAt.getTime() - a.createdAt.getTime()
     })
-  }, [todos, navigation, filters])
+  }, [todos, filters])
 
   const activeTodoCount = todos.filter(todo => !todo.completed).length
   const completedTodoCount = todos.filter(todo => todo.completed).length
@@ -156,9 +134,7 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick }) => {
                 ? 'No completed tasks'
                 : filters.mode === 'active'
                 ? 'No active tasks'
-                : navigation.viewMode === 'day'
-                ? 'No tasks for this day'
-                : 'No tasks for this week'
+                : 'No tasks yet'
               }
             </p>
             {filters.mode !== 'all' && (

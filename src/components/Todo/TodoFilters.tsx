@@ -24,7 +24,17 @@ const TodoFilters: React.FC<TodoFiltersProps> = ({
       {/* Filter Toggle Button */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-slate-600 dark:text-slate-400">
-          {activeTodoCount} of {totalTodoCount} tasks remaining
+          {filters.mode === 'all' 
+            ? `${totalTodoCount} total tasks` 
+            : filters.mode === 'active'
+            ? `${activeTodoCount} active tasks`
+            : `${completedTodoCount} completed tasks`
+          }
+          {filters.mode === 'all' && activeTodoCount > 0 && (
+            <span className="text-slate-500 dark:text-slate-500 ml-1">
+              ({activeTodoCount} remaining)
+            </span>
+          )}
         </div>
         
         {totalTodoCount > 0 && (

@@ -19,15 +19,26 @@ const TodoItem: React.FC<TodoItemProps> = ({
 }) => {
   const formatDueDate = (date: Date) => {
     const today = new Date()
-    const tomorrow = new Date(today)
-    tomorrow.setDate(today.getDate() + 1)
+    today.setHours(0, 0, 0, 0)
     
-    if (date.toDateString() === today.toDateString()) {
-      return 'Today'
-    } else if (date.toDateString() === tomorrow.toDateString()) {
-      return 'Tomorrow'
+    const dueDate = new Date(date)
+    dueDate.setHours(0, 0, 0, 0)
+    
+    const diffTime = dueDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) {
+      return 'Due today'
+    } else if (diffDays === 1) {
+      return 'Due tomorrow'
+    } else if (diffDays === -1) {
+      return 'Due yesterday'
+    } else if (diffDays < 0) {
+      return `${Math.abs(diffDays)} days overdue`
+    } else if (diffDays <= 7) {
+      return `Due in ${diffDays} days`
     } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      return `Due on ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
     }
   }
 

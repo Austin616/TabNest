@@ -16,7 +16,7 @@ const TodoModal: React.FC<TodoModalProps> = ({
 }) => {
   const [text, setText] = useState('')
   const [description, setDescription] = useState('')
-  const [dueDate, setDueDate] = useState('')
+  const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]) // Default to today
   const [reminderDays, setReminderDays] = useState('')
 
   // Reset form when modal opens
@@ -24,7 +24,7 @@ const TodoModal: React.FC<TodoModalProps> = ({
     if (isOpen) {
       setText('')
       setDescription('')
-      setDueDate('')
+      setDueDate(new Date().toISOString().split('T')[0]) // Reset to today
       setReminderDays('')
     }
   }, [isOpen])
@@ -47,11 +47,14 @@ const TodoModal: React.FC<TodoModalProps> = ({
     e.preventDefault()
     if (text.trim() === '') return
 
+    const today = new Date()
+    today.setHours(23, 59, 59, 999) // Set to end of day for due date
+
     const newTodo: Omit<Todo, 'id' | 'createdAt'> = {
       text: text.trim(),
       description: description.trim() || undefined,
       completed: false,
-      dueDate: dueDate ? new Date(dueDate) : undefined,
+      dueDate: dueDate ? createDateFromInput(dueDate) : today, // Always set due date, default to today
       reminderDays: reminderDays ? parseInt(reminderDays) : undefined,
       tags: []
     }
@@ -62,6 +65,15 @@ const TodoModal: React.FC<TodoModalProps> = ({
 
   const formatDateForInput = (date: Date) => {
     return date.toISOString().split('T')[0]
+  }
+
+  // Create date from input string without timezone issues
+  const createDateFromInput = (dateString: string) => {
+    if (!dateString) return undefined
+    // Parse YYYY-MM-DD as local date, not UTC
+    const [year, month, day] = dateString.split('-').map(Number)
+    const date = new Date(year, month - 1, day, 23, 59, 59, 999) // End of day local time
+    return date
   }
 
   if (!isOpen) return null

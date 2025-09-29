@@ -10,7 +10,7 @@ interface TodoFormProps {
 const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
   const [text, setText] = useState('')
   const [description, setDescription] = useState('')
-  const [dueDate, setDueDate] = useState('')
+  const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]) // Default to today
   const [reminder, setReminder] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
 
@@ -18,11 +18,14 @@ const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
     e.preventDefault()
     if (text.trim() === '') return
 
+    const today = new Date()
+    today.setHours(23, 59, 59, 999) // Set to end of day for due date
+
     const newTodo: Omit<Todo, 'id' | 'createdAt'> = {
       text: text.trim(),
       description: description.trim() || undefined,
       completed: false,
-      dueDate: dueDate ? new Date(dueDate) : undefined,
+      dueDate: dueDate ? createDateFromInput(dueDate) : today, // Always set due date, default to today
       reminderDays: reminder ? parseInt(reminder) : undefined,
       tags: []
     }
@@ -32,7 +35,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
     // Reset form
     setText('')
     setDescription('')
-    setDueDate('')
+    setDueDate(new Date().toISOString().split('T')[0]) // Reset to today
     setReminder('')
     setShowAdvanced(false)
   }
@@ -45,6 +48,15 @@ const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
     const offset = date.getTimezoneOffset()
     const localDate = new Date(date.getTime() - (offset * 60 * 1000))
     return localDate.toISOString().slice(0, 16)
+  }
+
+  // Create date from input string without timezone issues
+  const createDateFromInput = (dateString: string) => {
+    if (!dateString) return undefined
+    // Parse YYYY-MM-DD as local date, not UTC
+    const [year, month, day] = dateString.split('-').map(Number)
+    const date = new Date(year, month - 1, day, 23, 59, 59, 999) // End of day local time
+    return date
   }
 
   return (
