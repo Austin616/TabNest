@@ -4,10 +4,91 @@ import { useTodos } from '../../contexts/TodoContext'
 import type { Todo } from '../../types/todo'
 
 type ViewMode = 'day' | 'week'
- 
+
+// Inline Edit Component
+const TodoInlineEdit: React.FC<{
+  todo: Todo
+  onSave: (updates: Partial<Omit<Todo, 'id' | 'createdAt'>>) => void
+  onCancel: () => void
+}> = ({ todo, onSave, onCancel }) => {
+  const [text, setText] = useState(todo.text)
+  const [description, setDescription] = useState(todo.description || '')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (text.trim()) {
+      onSave({
+        text: text.trim(),
+        description: description.trim() || undefined
+      })
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 pt-3 pb-1">
+      <div>
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Task name"
+          className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          autoFocus
+        />
+      </div>
+      <div>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Add notes..."
+          rows={2}
+          className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+        />
+      </div>
+      <div className="space-y-2 pb-1">
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={!text.trim()}
+            className="flex-1 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 px-3 py-2 text-sm bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-300 font-medium rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            // Open dashboard with this specific todo for editing
+            if (typeof chrome !== 'undefined' && chrome.tabs) {
+              chrome.tabs.create({ 
+                url: chrome.runtime.getURL(`index.html?edit=${todo.id}`) 
+              })
+            } else {
+              // Fallback for development
+              window.open(`/dashboard?edit=${todo.id}`, '_blank')
+            }
+          }}
+          className="w-full text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-1 py-1"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+          Open in dashboard for full edit
+        </button>
+      </div>
+    </form>
+  )
+}
 
 const Popup: React.FC = () => {
-  const { todos, addTodo, toggleTodoComplete } = useTodos()
+  const { todos, addTodo, toggleTodoComplete, editTodo } = useTodos()
   const [newTask, setNewTask] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState('')
@@ -16,6 +97,7 @@ const Popup: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('day')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
 
   // Create date from input string without timezone issues
   const createDateFromInput = (dateString: string) => {
@@ -133,6 +215,12 @@ const Popup: React.FC = () => {
     toggleTodoComplete(id)
   }
 
+  const handleEditTodo = (todo: Todo) => {
+    console.log('handleEditTodo called with todo:', todo.text)
+    // Toggle edit dropdown for this todo
+    setEditingTodoId(editingTodoId === todo.id ? null : todo.id)
+  }
+
   const openDashboard = () => {
     if (typeof chrome !== 'undefined' && chrome.tabs) {
       chrome.tabs.create({ url: chrome.runtime.getURL('index.html') })
@@ -213,7 +301,7 @@ const Popup: React.FC = () => {
   const completedTodos = filteredTodos.filter(todo => todo.completed)
 
   return (
-    <div className="w-80 min-h-96 max-h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 text-slate-900 dark:text-slate-100">
+    <div className="w-80 min-h-96 max-h-[600px] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 text-slate-900 dark:text-slate-100 overflow-hidden flex flex-col">
       {/* Header */}
       <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 p-4">
         <div className="flex items-center justify-between mb-3">
@@ -368,7 +456,7 @@ const Popup: React.FC = () => {
       </div>
 
       {/* Today's Tasks */}
-      <div className="p-4 flex-1 overflow-y-auto">
+      <div className="flex-1 p-4 overflow-y-auto min-h-0">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
             {viewMode === 'day' 
@@ -407,56 +495,81 @@ const Popup: React.FC = () => {
                 return (
                   <div
                     key={todo.id}
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all duration-200 hover:shadow-sm ${
+                    className={`rounded-lg border transition-all duration-200 ${
                       isOverdue 
                         ? 'bg-red-50/80 dark:bg-red-900/20 border-red-200 dark:border-red-700' 
-                        : 'bg-white/50 dark:bg-slate-700/50 border-slate-200/50 dark:border-slate-600/50 hover:bg-white/70 dark:hover:bg-slate-700/70'
-                    }`}
+                        : 'bg-white/50 dark:bg-slate-700/50 border-slate-200/50 dark:border-slate-600/50'
+                    } ${editingTodoId === todo.id ? 'ring-2 ring-blue-500/20' : ''}`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={todo.completed}
-                      onChange={() => toggleTodo(todo.id)}
-                      className={`mt-0.5 w-4 h-4 rounded focus:ring-2 transition-colors ${
-                        isOverdue 
-                          ? 'text-red-500 bg-white dark:bg-slate-600 border-red-300 dark:border-red-600 focus:ring-red-500'
-                          : 'text-blue-600 bg-white dark:bg-slate-600 border-slate-300 dark:border-slate-500 focus:ring-blue-500'
+                    {/* Todo Item */}
+                    <div
+                      className={`flex items-start gap-3 p-3 cursor-pointer transition-all duration-200 ${
+                        editingTodoId !== todo.id ? 'hover:shadow-sm hover:bg-white/70 dark:hover:bg-slate-700/70' : ''
                       }`}
-                    />
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className={`text-sm font-medium truncate ${
-                            isOverdue
-                              ? 'text-red-700 dark:text-red-300'
-                              : 'text-slate-800 dark:text-slate-200'
-                          }`}
-                        >
-                          {todo.text}
-                        </span>
-                        
-                        {todo.dueDate && (
+                      onClick={() => handleEditTodo(todo)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={todo.completed}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          toggleTodo(todo.id)
+                        }}
+                        className={`mt-0.5 w-4 h-4 rounded focus:ring-2 transition-colors ${
+                          isOverdue 
+                            ? 'text-red-500 bg-white dark:bg-slate-600 border-red-300 dark:border-red-600 focus:ring-red-500'
+                            : 'text-blue-600 bg-white dark:bg-slate-600 border-slate-300 dark:border-slate-500 focus:ring-blue-500'
+                        }`}
+                      />
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
                           <span
-                            className={`px-1.5 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${
+                            className={`text-sm font-medium truncate ${
                               isOverdue
-                                ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
-                                : isDueToday
-                                ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
-                                : 'bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-400'
+                                ? 'text-red-700 dark:text-red-300'
+                                : 'text-slate-800 dark:text-slate-200'
                             }`}
                           >
-                            {formatDueDate(todo.dueDate)}
+                            {todo.text}
                           </span>
+                          
+                          {todo.dueDate && (
+                            <span
+                              className={`px-1.5 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${
+                                isOverdue
+                                  ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
+                                  : isDueToday
+                                  ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
+                                  : 'bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-400'
+                              }`}
+                            >
+                              {formatDueDate(todo.dueDate)}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {todo.description && (
+                          <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                            {todo.description}
+                          </p>
                         )}
                       </div>
-                      
-                      {todo.description && (
-                        <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                          {todo.description}
-                        </p>
-                      )}
                     </div>
+                    
+                    {/* Inline Edit Dropdown */}
+                    {editingTodoId === todo.id && (
+                      <div className="border-t border-slate-200/50 dark:border-slate-700/50 px-3 pb-3 bg-slate-50/30 dark:bg-slate-800/30">
+                        <TodoInlineEdit
+                          todo={todo}
+                          onSave={(updates) => {
+                            editTodo(todo.id, updates)
+                            setEditingTodoId(null)
+                          }}
+                          onCancel={() => setEditingTodoId(null)}
+                        />
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -464,7 +577,7 @@ const Popup: React.FC = () => {
               {/* Completed Tasks */}
               {completedTodos.length > 0 && (
                 <>
-                  <div className="mt-4 mb-2">
+                  <div className="mt-6 mb-2">
                     <h4 className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">
                       Completed ({completedTodos.length})
                     </h4>
@@ -472,40 +585,70 @@ const Popup: React.FC = () => {
                   {completedTodos.map((todo) => (
                     <div
                       key={todo.id}
-                      className="flex items-start gap-3 p-3 bg-white/30 dark:bg-slate-700/30 rounded-lg border border-slate-200/30 dark:border-slate-600/30 opacity-75"
+                      className={`rounded-lg border border-slate-200/30 dark:border-slate-600/30 bg-white/30 dark:bg-slate-700/30 opacity-75 transition-all duration-200 ${
+                        editingTodoId === todo.id ? 'ring-2 ring-blue-500/20 opacity-100' : ''
+                      }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={todo.completed}
-                        onChange={() => toggleTodo(todo.id)}
-                        className="mt-0.5 w-4 h-4 text-blue-600 bg-white dark:bg-slate-600 border-slate-300 dark:border-slate-500 rounded focus:ring-blue-500 focus:ring-2 transition-colors"
-                      />
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm text-slate-500 dark:text-slate-400 line-through truncate">
-                            {todo.text}
-                          </span>
-                          
-                          {todo.dueDate && (
-                            <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-400 flex-shrink-0">
-                              {formatDueDate(todo.dueDate)}
+                      {/* Completed Todo Item */}
+                      <div
+                        className={`flex items-start gap-3 p-3 cursor-pointer transition-all duration-200 ${
+                          editingTodoId !== todo.id ? 'hover:opacity-90' : ''
+                        }`}
+                        onClick={() => handleEditTodo(todo)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={todo.completed}
+                          onChange={(e) => {
+                            e.stopPropagation()
+                            toggleTodo(todo.id)
+                          }}
+                          className="mt-0.5 w-4 h-4 text-blue-600 bg-white dark:bg-slate-600 border-slate-300 dark:border-slate-500 rounded focus:ring-blue-500 focus:ring-2 transition-colors"
+                        />
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm text-slate-500 dark:text-slate-400 line-through truncate">
+                              {todo.text}
                             </span>
+                            
+                            {todo.dueDate && (
+                              <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-400 flex-shrink-0">
+                                {formatDueDate(todo.dueDate)}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {todo.description && (
+                            <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+                              {todo.description}
+                            </p>
                           )}
                         </div>
-                        
-                        {todo.description && (
-                          <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
-                            {todo.description}
-                          </p>
-                        )}
                       </div>
+                      
+                      {/* Inline Edit Dropdown for Completed Todo */}
+                      {editingTodoId === todo.id && (
+                        <div className="border-t border-slate-200/50 dark:border-slate-700/50 px-3 pb-3 bg-slate-50/30 dark:bg-slate-800/30">
+                          <TodoInlineEdit
+                            todo={todo}
+                            onSave={(updates) => {
+                              editTodo(todo.id, updates)
+                              setEditingTodoId(null)
+                            }}
+                            onCancel={() => setEditingTodoId(null)}
+                          />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </>
               )}
             </>
           )}
+          
+          {/* Bottom spacing to prevent overlap with footer */}
+          <div className="h-4"></div>
         </div>
       </div>
 
@@ -518,6 +661,7 @@ const Popup: React.FC = () => {
           Open Full Dashboard
         </button>
       </div>
+
     </div>
   )
 }

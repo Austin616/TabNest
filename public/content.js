@@ -1,66 +1,71 @@
 // TabNest Content Script
 // Runs on all web pages to provide quick task capture functionality
 
-(function() {
-  'use strict'
-
-  // Create floating action button for quick task capture
-  function createFloatingButton() {
-    const button = document.createElement('div')
-    button.id = 'tabnest-floating-btn'
-    button.innerHTML = `
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-      </svg>
-    `
+// Listen for messages from popup/extension
+if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Content script received message:', message)
     
-    // Styles for the floating button
-    Object.assign(button.style, {
-      position: 'fixed',
-      bottom: '20px',
-      right: '20px',
-      width: '50px',
-      height: '50px',
-      borderRadius: '50%',
-      background: 'linear-gradient(135deg, #2563eb, #059669)',
-      color: 'white',
-      border: 'none',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
-      zIndex: '9999',
-      transition: 'all 0.3s ease',
-      opacity: '0',
-      transform: 'scale(0.8)',
-      pointerEvents: 'auto'
-    })
+    if (message.type === 'PING') {
+      console.log('Responding to PING with ready status')
+      sendResponse({ ready: true })
+      return true
+    }
+    
+    // Handle unknown messages
+    console.log('Unknown message type or missing todo:', message.type)
+    sendResponse({ ready: false })
+    return true
+  })
+}
 
-    // Hover effects
-    button.addEventListener('mouseenter', () => {
-      button.style.transform = 'scale(1.1)'
-      button.style.boxShadow = '0 6px 16px rgba(37, 99, 235, 0.4)'
-    })
+// Immediately Invoked Function Expression (IIFE) to avoid polluting global scope
+(function() {
+  console.log('TabNest content script loaded')
 
-    button.addEventListener('mouseleave', () => {
-      button.style.transform = 'scale(1)'
-      button.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.3)'
-    })
+  // Create floating add button
+  const floatingButton = document.createElement('button')
+  floatingButton.id = 'tabnest-floating-button'
+  floatingButton.innerHTML = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  `
+  floatingButton.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border: none;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-family: system-ui, -apple-system, sans-serif;
+  `
 
-    // Click handler
-    button.addEventListener('click', showQuickAddModal)
+  // Hover effects
+  floatingButton.addEventListener('mouseenter', () => {
+    floatingButton.style.transform = 'scale(1.1)'
+    floatingButton.style.boxShadow = '0 12px 40px rgba(59, 130, 246, 0.6)'
+  })
 
-    document.body.appendChild(button)
+  floatingButton.addEventListener('mouseleave', () => {
+    floatingButton.style.transform = 'scale(1)'
+    floatingButton.style.boxShadow = '0 8px 32px rgba(59, 130, 246, 0.4)'
+  })
 
-    // Animate in
-    setTimeout(() => {
-      button.style.opacity = '1'
-      button.style.transform = 'scale(1)'
-    }, 100)
+  // Click handler to show quick add modal
+  floatingButton.addEventListener('click', showQuickAddModal)
 
-    return button
-  }
+  document.body.appendChild(floatingButton)
 
   // Create quick add modal
   function showQuickAddModal() {
@@ -68,193 +73,192 @@
     const existingModal = document.getElementById('tabnest-modal')
     if (existingModal) {
       existingModal.remove()
-      return
     }
 
+    // Create modal
     const modal = document.createElement('div')
     modal.id = 'tabnest-modal'
-    
-    // Get selected text if any
-    const selectedText = window.getSelection().toString().trim()
-    
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    `
+
     modal.innerHTML = `
-      <div id="tabnest-modal-backdrop" style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
+      <div style="
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        width: 400px;
+        max-width: 90vw;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        transform: scale(0.9);
+        transition: transform 0.3s ease;
       ">
-        <div id="tabnest-modal-content" style="
-          background: white;
-          border-radius: 12px;
-          padding: 24px;
-          width: 400px;
-          max-width: 90vw;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-          transform: scale(0.9);
-          transition: transform 0.3s ease;
-        ">
-          <div style="
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h3 style="margin: 0; color: #1f2937; font-size: 20px; font-weight: 600;">Quick Add Task</h3>
+          <button id="tabnest-close" style="
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0;
+            width: 30px;
+            height: 30px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-          ">
-            <h3 style="
-              margin: 0;
-              font-size: 18px;
-              font-weight: 600;
-              background: linear-gradient(135deg, #2563eb, #059669);
-              -webkit-background-clip: text;
-              -webkit-text-fill-color: transparent;
-              background-clip: text;
-            ">Add to TabNest</h3>
-            <button id="tabnest-close-modal" style="
-              background: none;
-              border: none;
-              font-size: 20px;
-              cursor: pointer;
-              color: #64748b;
-              padding: 4px;
-              border-radius: 4px;
-            ">×</button>
-          </div>
-          
-          <form id="tabnest-quick-form">
-            <textarea id="tabnest-task-input" placeholder="Enter your task..." style="
-              width: 100%;
-              min-height: 80px;
-              padding: 12px;
-              border: 2px solid #e2e8f0;
-              border-radius: 8px;
-              font-family: system-ui, -apple-system, sans-serif;
-              font-size: 14px;
-              resize: vertical;
-              outline: none;
-              transition: border-color 0.2s ease;
-            ">${selectedText}</textarea>
-            
-            <div style="
-              display: flex;
-              gap: 8px;
-              margin-top: 16px;
-            ">
-              <button type="button" id="tabnest-cancel" style="
-                flex: 1;
-                padding: 10px 16px;
-                border: 2px solid #e2e8f0;
-                border-radius: 8px;
-                background: white;
-                color: #64748b;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.2s ease;
-              ">Cancel</button>
-              
-              <button type="submit" id="tabnest-add" style="
-                flex: 1;
-                padding: 10px 16px;
-                border: none;
-                border-radius: 8px;
-                background: linear-gradient(135deg, #2563eb, #059669);
-                color: white;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.2s ease;
-              ">Add Task</button>
-            </div>
-          </form>
+            justify-content: center;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+          " onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='transparent'">&times;</button>
         </div>
+        
+        <form id="tabnest-form">
+          <input 
+            type="text" 
+            id="tabnest-task-input" 
+            placeholder="What do you need to do?" 
+            required
+            style="
+              width: 100%;
+              padding: 12px;
+              border: 2px solid #d1d5db;
+              border-radius: 8px;
+              font-size: 16px;
+              margin-bottom: 16px;
+              transition: border-color 0.2s;
+              box-sizing: border-box;
+            "
+            onfocus="this.style.borderColor='#3b82f6'"
+            onblur="this.style.borderColor='#d1d5db'"
+          >
+          
+          <div style="display: flex; gap: 12px;">
+            <button type="button" id="tabnest-cancel" style="
+              flex: 1;
+              padding: 12px;
+              background: #f3f4f6;
+              border: 2px solid #d1d5db;
+              border-radius: 8px;
+              font-size: 16px;
+              color: #374151;
+              cursor: pointer;
+              transition: background-color 0.2s;
+            " onmouseover="this.style.backgroundColor='#e5e7eb'" onmouseout="this.style.backgroundColor='#f3f4f6'">Cancel</button>
+            <button type="submit" style="
+              flex: 1;
+              padding: 12px;
+              background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+              border: none;
+              border-radius: 8px;
+              font-size: 16px;
+              color: white;
+              cursor: pointer;
+              transition: all 0.2s;
+            " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">Add Task</button>
+          </div>
+        </form>
       </div>
     `
 
     document.body.appendChild(modal)
 
-    // Animate in
-    const backdrop = modal.querySelector('#tabnest-modal-backdrop')
-    const content = modal.querySelector('#tabnest-modal-content')
-    
-    setTimeout(() => {
-      backdrop.style.opacity = '1'
-      content.style.transform = 'scale(1)'
-    }, 10)
+    const form = modal.querySelector('#tabnest-form')
+    const input = modal.querySelector('#tabnest-task-input')
+    const closeBtn = modal.querySelector('#tabnest-close')
+    const cancelBtn = modal.querySelector('#tabnest-cancel')
+    const content = modal.querySelector('div')
 
-    // Focus the textarea
-    const textarea = modal.querySelector('#tabnest-task-input')
-    setTimeout(() => textarea.focus(), 100)
+    // Close modal function
+    function closeModal() {
+      modal.style.opacity = '0'
+      content.style.transform = 'scale(0.9)'
+      setTimeout(() => {
+        modal.remove()
+      }, 300)
+    }
 
-    // Event handlers
-    modal.querySelector('#tabnest-close-modal').addEventListener('click', closeModal)
-    modal.querySelector('#tabnest-cancel').addEventListener('click', closeModal)
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) closeModal()
-    })
-
-    modal.querySelector('#tabnest-quick-form').addEventListener('submit', (e) => {
-      e.preventDefault()
-      const taskText = textarea.value.trim()
-      if (taskText) {
-        addTaskToStorage(taskText)
+    // Event listeners
+    closeBtn.addEventListener('click', closeModal)
+    cancelBtn.addEventListener('click', closeModal)
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
         closeModal()
       }
     })
 
-    // ESC key handler
-    function handleEscape(e) {
+    // Handle form submission
+    form.addEventListener('submit', (e) => {
+      e.preventDefault()
+      const taskText = input.value.trim()
+      
+      if (taskText) {
+        // Get current URL as context
+        const currentUrl = window.location.href
+        const currentTitle = document.title
+        
+        // Create new todo
+        const newTodo = {
+          id: `todo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          text: taskText,
+          completed: false,
+          createdAt: new Date(),
+          dueDate: new Date(new Date().setHours(23, 59, 59, 999)), // Due today at end of day
+          description: `Added from: ${currentTitle}\nURL: ${currentUrl}`,
+          tags: [],
+          reminderDays: undefined
+        }
+
+        // Send to background script for storage
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage({
+            type: 'ADD_TODO',
+            todo: newTodo
+          }, (response) => {
+            console.log('Add todo response:', response)
+            if (response && response.success) {
+              showNotification('Task added successfully!')
+              closeModal()
+            } else {
+              showNotification('Failed to add task', 'error')
+            }
+          })
+        } else {
+          console.error('Chrome runtime not available')
+          showNotification('Failed to add task', 'error')
+        }
+      }
+    })
+
+    // Animate in
+    requestAnimationFrame(() => {
+      modal.style.opacity = '1'
+      content.style.transform = 'scale(1)'
+    })
+
+    // Focus input
+    setTimeout(() => {
+      input.focus()
+    }, 100)
+
+    // Close on escape
+    const handleEscape = (e) => {
       if (e.key === 'Escape') {
         closeModal()
+        document.removeEventListener('keydown', handleEscape)
       }
     }
     document.addEventListener('keydown', handleEscape)
-
-    function closeModal() {
-      document.removeEventListener('keydown', handleEscape)
-      backdrop.style.opacity = '0'
-      content.style.transform = 'scale(0.9)'
-      setTimeout(() => modal.remove(), 300)
-    }
-  }
-
-  // Add task to storage
-  function addTaskToStorage(text) {
-    const task = {
-      id: `todo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      text: text,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      dueDate: new Date().toISOString(),
-      tags: ['from-web', window.location.hostname]
-    }
-
-    // Send to background script
-    chrome.runtime.sendMessage({
-      type: 'GET_TODOS'
-    }, (response) => {
-      try {
-        const todos = JSON.parse(response.todos || '[]')
-        todos.push(task)
-        
-        chrome.runtime.sendMessage({
-          type: 'SAVE_TODOS',
-          data: JSON.stringify(todos)
-        })
-
-        // Show success notification
-        showNotification('Task added to TabNest!', 'success')
-      } catch (error) {
-        console.error('Error adding task:', error)
-        showNotification('Failed to add task', 'error')
-      }
-    })
   }
 
   // Show in-page notification
@@ -281,35 +285,18 @@
     document.body.appendChild(notification)
 
     // Animate in
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       notification.style.transform = 'translateX(0)'
-    }, 10)
+    })
 
-    // Auto remove
+    // Auto remove after 3 seconds
     setTimeout(() => {
       notification.style.transform = 'translateX(100%)'
-      setTimeout(() => notification.remove(), 300)
+      setTimeout(() => {
+        notification.remove()
+      }, 300)
     }, 3000)
   }
 
-  // Initialize when page is ready
-  function init() {
-    // Don't show on extension pages
-    if (window.location.protocol === 'chrome-extension:') return
-    
-    // Don't show on certain sites
-    const blockedSites = ['chrome.google.com', 'chrome-extension://', 'moz-extension://']
-    if (blockedSites.some(site => window.location.href.includes(site))) return
-
-    // Create floating button after a short delay
-    setTimeout(createFloatingButton, 1000)
-  }
-
-  // Start when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init)
-  } else {
-    init()
-  }
-
-})();
+  console.log('TabNest content script initialized with floating button')
+})()

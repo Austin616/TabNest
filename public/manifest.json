@@ -26,11 +26,12 @@
   "permissions": [
     "storage",
     "activeTab",
+    "tabs",
+    "scripting",
     "notifications"
   ],
   
   "optional_permissions": [
-    "tabs",
     "bookmarks"
   ],
   

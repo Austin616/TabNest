@@ -98,6 +98,37 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         message: message.message
       })
       break
+
+    case 'UPDATE_TODO':
+      chrome.storage.local.get(['tabnest-todos'], (result) => {
+        try {
+          const todos = result['tabnest-todos'] ? JSON.parse(result['tabnest-todos']) : []
+          const todoIndex = todos.findIndex(todo => todo.id === message.todoId)
+          
+          if (todoIndex !== -1) {
+            // Update the todo with the provided updates
+            todos[todoIndex] = { ...todos[todoIndex], ...message.updates }
+            
+            // Serialize dates to strings for storage
+            if (todos[todoIndex].dueDate instanceof Date) {
+              todos[todoIndex].dueDate = todos[todoIndex].dueDate.toISOString()
+            }
+            if (todos[todoIndex].createdAt instanceof Date) {
+              todos[todoIndex].createdAt = todos[todoIndex].createdAt.toISOString()
+            }
+            
+            chrome.storage.local.set({ 'tabnest-todos': JSON.stringify(todos) }, () => {
+              sendResponse({ success: true })
+            })
+          } else {
+            sendResponse({ success: false, error: 'Todo not found' })
+          }
+        } catch (error) {
+          console.error('Error updating todo:', error)
+          sendResponse({ success: false, error: error.message })
+        }
+      })
+      return true // Keep message channel open for async response
       
     default:
       console.log('Unknown message type:', message.type)

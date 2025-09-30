@@ -4,6 +4,7 @@ import type { Todo } from '../types/todo'
 interface TodoContextType {
   todos: Todo[]
   addTodo: (todo: Omit<Todo, 'id' | 'createdAt'>) => void
+  editTodo: (id: string, updates: Partial<Omit<Todo, 'id' | 'createdAt'>>) => void
   toggleTodoComplete: (id: string) => void
   deleteTodo: (id: string) => void
 }
@@ -190,6 +191,14 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
     })
   }
 
+  const editTodo = (id: string, updates: Partial<Omit<Todo, 'id' | 'createdAt'>>) => {
+    setTodos(prevTodos =>
+      prevTodos.map(todo =>
+        todo.id === id ? { ...todo, ...updates } : todo
+      )
+    )
+  }
+
   const toggleTodoComplete = (id: string) => {
     setTodos(prevTodos =>
       prevTodos.map(todo =>
@@ -205,6 +214,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
   const value: TodoContextType = {
     todos,
     addTodo,
+    editTodo,
     toggleTodoComplete,
     deleteTodo
   }

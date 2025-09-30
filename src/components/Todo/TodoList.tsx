@@ -8,9 +8,10 @@ import TodoFiltersComponent from './TodoFilters'
 
 interface TodoListProps {
   onAddTaskClick: () => void
+  onEditTodo: (todo: Todo) => void
 }
 
-const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick }) => {
+const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick, onEditTodo }) => {
   const { todos, toggleTodoComplete, deleteTodo } = useTodos()
   const [navigation, setNavigation] = useState<DateNavigation>({
     currentDate: new Date(),
@@ -153,6 +154,7 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick }) => {
               todo={todo}
               onToggleComplete={toggleTodoComplete}
               onDelete={deleteTodo}
+              onEdit={onEditTodo}
               currentDate={navigation.currentDate}
             />
           ))

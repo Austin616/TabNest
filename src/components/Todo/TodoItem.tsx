@@ -6,7 +6,7 @@ interface TodoItemProps {
   todo: Todo
   onToggleComplete: (id: string) => void
   onDelete: (id: string) => void
-  onEdit?: (id: string) => void
+  onEdit?: (todo: Todo) => void
   currentDate?: Date
 }
 
@@ -71,7 +71,18 @@ const TodoItem: React.FC<TodoItemProps> = ({
         }`}
       />
       
-      <div className="flex-1 min-w-0">
+      <div 
+        className="flex-1 min-w-0 cursor-pointer" 
+        onClick={() => onEdit?.(todo)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onEdit?.(todo)
+          }
+        }}
+      >
         <div className="flex items-center gap-2 mb-1">
           <span
             className={`font-medium transition-all duration-300 ${
@@ -135,7 +146,10 @@ const TodoItem: React.FC<TodoItemProps> = ({
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         {onEdit && (
           <button
-            onClick={() => onEdit(todo.id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit(todo)
+            }}
             className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors hover:scale-110"
             aria-label="Edit todo"
           >
