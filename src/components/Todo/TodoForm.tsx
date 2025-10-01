@@ -11,6 +11,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
   const [text, setText] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]) // Default to today
+  const [dueTime, setDueTime] = useState('')
   const [reminder, setReminder] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
 
@@ -26,6 +27,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
       description: description.trim() || undefined,
       completed: false,
       dueDate: dueDate ? createDateFromInput(dueDate) : today, // Always set due date, default to today
+      dueTime: dueTime.trim() || undefined,
       reminderDays: reminder ? parseInt(reminder) : undefined,
       tags: []
     }
@@ -36,6 +38,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
     setText('')
     setDescription('')
     setDueDate(new Date().toISOString().split('T')[0]) // Reset to today
+    setDueTime('')
     setReminder('')
     setShowAdvanced(false)
   }
@@ -117,6 +120,18 @@ const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               min={formatDateForInput(new Date())}
+              className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white/80 dark:bg-slate-700/80 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-sm"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Due Time
+            </label>
+            <input
+              type="time"
+              value={dueTime}
+              onChange={(e) => setDueTime(e.target.value)}
               className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white/80 dark:bg-slate-700/80 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-sm"
             />
           </div>

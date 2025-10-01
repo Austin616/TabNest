@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { ExternalLink, ClipboardList, Settings, Calendar, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useTodos } from '../../contexts/TodoContext'
-import { organizeTodosByDate, getEmptyStateMessage, isTaskReminderActive } from '../../utils/todoDateUtils'
+import { organizeTodosByDate, getEmptyStateMessage, isTaskReminderActive, formatTimeForDisplay } from '../../utils/todoDateUtils'
 import type { Todo } from '../../types/todo'
 
 type ViewMode = 'day' | 'week'
@@ -14,13 +14,15 @@ const TodoInlineEdit: React.FC<{
 }> = ({ todo, onSave, onCancel }) => {
   const [text, setText] = useState(todo.text)
   const [description, setDescription] = useState(todo.description || '')
+  const [dueTime, setDueTime] = useState(todo.dueTime || '')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (text.trim()) {
       onSave({
         text: text.trim(),
-        description: description.trim() || undefined
+        description: description.trim() || undefined,
+        dueTime: dueTime.trim() || undefined
       })
     }
   }
@@ -44,6 +46,15 @@ const TodoInlineEdit: React.FC<{
           placeholder="Add notes..."
           rows={2}
           className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+        />
+      </div>
+      <div>
+        <input
+          type="time"
+          value={dueTime}
+          onChange={(e) => setDueTime(e.target.value)}
+          placeholder="Due time..."
+          className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
       <div className="space-y-2 pb-1">
@@ -93,6 +104,7 @@ const Popup: React.FC = () => {
   const [newTask, setNewTask] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState('')
+  const [dueTime, setDueTime] = useState('')
   const [reminderDays, setReminderDays] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -110,31 +122,6 @@ const Popup: React.FC = () => {
     return date
   }
 
-  // Format due date for display (matching main dashboard)
-  const formatDueDate = (date: Date) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    
-    const dueDate = new Date(date)
-    dueDate.setHours(0, 0, 0, 0)
-    
-    const diffTime = dueDate.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    if (diffDays === 0) {
-      return 'Due today'
-    } else if (diffDays === 1) {
-      return 'Due tomorrow'
-    } else if (diffDays === -1) {
-      return 'Due yesterday'
-    } else if (diffDays < 0) {
-      return `${Math.abs(diffDays)} days overdue`
-    } else if (diffDays <= 7) {
-      return `Due in ${diffDays} days`
-    } else {
-      return `Due on ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-    }
-  }
 
   // Update time every minute
   useEffect(() => {
@@ -199,6 +186,7 @@ const Popup: React.FC = () => {
       description: description.trim() || undefined,
       completed: false,
       dueDate: dueDate ? createDateFromInput(dueDate) : today, // Always set due date, default to today
+      dueTime: dueTime.trim() || undefined,
       reminderDays: reminderDays ? parseInt(reminderDays) : undefined,
       tags: []
     }
@@ -209,6 +197,7 @@ const Popup: React.FC = () => {
     setNewTask('')
     setDescription('')
     setDueDate('')
+    setDueTime('')
     setReminderDays('')
     setShowAdvanced(false)
   }
@@ -232,7 +221,8 @@ const Popup: React.FC = () => {
     }
   }
 
-  const formatTime = (date: Date) => {
+
+  const formatCurrentTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', { 
       hour: 'numeric', 
       minute: '2-digit',
@@ -351,7 +341,7 @@ const Popup: React.FC = () => {
         
         <div className="text-center">
           <div className="text-2xl font-semibold text-slate-800 dark:text-slate-200">
-            {formatTime(currentTime)}
+            {formatCurrentTime(currentTime)}
           </div>
           <div className="text-sm text-slate-600 dark:text-slate-400">
             {formatDate(currentTime)}
@@ -417,19 +407,29 @@ const Popup: React.FC = () => {
                 </div>
                 
                 <div>
-                  <select
-                    value={reminderDays}
-                    onChange={(e) => setReminderDays(e.target.value)}
+                  <input
+                    type="time"
+                    value={dueTime}
+                    onChange={(e) => setDueTime(e.target.value)}
                     className="w-full px-3 py-2 text-sm rounded-md border border-slate-300 dark:border-slate-600 bg-white/80 dark:bg-slate-700/80 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    title="Reminder"
-                  >
-                    <option value="">No reminder</option>
-                    <option value="1">1 day before</option>
-                    <option value="2">2 days before</option>
-                    <option value="3">3 days before</option>
-                    <option value="7">1 week before</option>
-                  </select>
+                    title="Due Time"
+                  />
                 </div>
+              </div>
+              
+              <div>
+                <select
+                  value={reminderDays}
+                  onChange={(e) => setReminderDays(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-md border border-slate-300 dark:border-slate-600 bg-white/80 dark:bg-slate-700/80 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  title="Reminder"
+                >
+                  <option value="">No reminder</option>
+                  <option value="1">1 day before</option>
+                  <option value="2">2 days before</option>
+                  <option value="3">3 days before</option>
+                  <option value="7">1 week before</option>
+                </select>
               </div>
             </div>
           )}
@@ -515,7 +515,6 @@ const Popup: React.FC = () => {
                 }`}>
                   {group.todos.map((todo) => {
                     const isOverdue = todo.dueDate && todo.dueDate < new Date() && !todo.completed
-                    const isDueToday = todo.dueDate && todo.dueDate.toDateString() === new Date().toDateString()
                     const isCompleted = todo.completed
                     const hasActiveReminder = isTaskReminderActive(todo, currentDate)
                     
@@ -574,19 +573,17 @@ const Popup: React.FC = () => {
                                 {todo.text}
                               </span>
                               
-                              {todo.dueDate && (
+                              {todo.dueTime && todo.dueDate && (
                                 <span
                                   className={`px-1.5 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${
                                     isCompleted
                                       ? 'bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-400'
                                       : isOverdue
                                       ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
-                                      : isDueToday
-                                      ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
-                                      : 'bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-400'
+                                      : 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
                                   }`}
                                 >
-                                  {formatDueDate(todo.dueDate)}
+                                  🕐 {formatTimeForDisplay(todo.dueTime, todo.dueDate, dateFormat)}
                                 </span>
                               )}
                             </div>

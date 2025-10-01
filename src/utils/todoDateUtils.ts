@@ -333,6 +333,59 @@ export const organizeTodosByDate = (todos: Todo[], currentDate: Date, viewMode: 
   return groups
 }
 
+export const formatTimeForDisplay = (timeString: string, dueDate: Date, format: 'relative' | 'absolute' = 'relative'): string => {
+  if (format === 'absolute') {
+    // Show actual time
+    const [hours, minutes] = timeString.split(':')
+    const hour = parseInt(hours)
+    const ampm = hour >= 12 ? 'PM' : 'AM'
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+    return `Due at ${displayHour}:${minutes} ${ampm}`
+  }
+  
+  // Show relative time (due in X hours)
+  const now = new Date()
+  const taskDateTime = new Date(dueDate)
+  const [hours, minutes] = timeString.split(':')
+  taskDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+  
+  const diffMs = taskDateTime.getTime() - now.getTime()
+  const diffHours = Math.round(diffMs / (1000 * 60 * 60))
+  const diffMinutes = Math.round(diffMs / (1000 * 60))
+  
+  if (diffMs < 0) {
+    // Overdue
+    const overdueDays = Math.abs(Math.floor(diffMs / (1000 * 60 * 60 * 24)))
+    const overdueHours = Math.abs(Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)))
+    
+    if (overdueDays > 0) {
+      return `${overdueDays}d ${overdueHours}h overdue`
+    } else if (overdueHours > 0) {
+      return `${overdueHours}h overdue`
+    } else {
+      const overdueMinutes = Math.abs(Math.floor(diffMs / (1000 * 60)))
+      return `${overdueMinutes}m overdue`
+    }
+  } else if (diffHours < 1) {
+    // Less than an hour
+    if (diffMinutes <= 0) {
+      return 'Due now'
+    }
+    return `Due in ${diffMinutes}m`
+  } else if (diffHours < 24) {
+    // Same day
+    return `Due in ${diffHours}h`
+  } else {
+    // More than a day away
+    const days = Math.floor(diffHours / 24)
+    const remainingHours = diffHours % 24
+    if (remainingHours === 0) {
+      return `Due in ${days}d`
+    }
+    return `Due in ${days}d ${remainingHours}h`
+  }
+}
+
 export const getEmptyStateMessage = (currentDate: Date, viewMode: 'day' | 'week' = 'day'): string => {
   const today = new Date()
   const isToday = currentDate.toDateString() === today.toDateString()

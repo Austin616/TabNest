@@ -182,7 +182,7 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick, onEditTodo }) => {
                         onToggleComplete={toggleTodoComplete}
                         onDelete={deleteTodo}
                         onEdit={onEditTodo}
-                        currentDate={navigation.currentDate}
+                        dateFormat={navigation.dateFormat}
                       />
                     </div>
                   )

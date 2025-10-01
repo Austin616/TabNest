@@ -18,6 +18,7 @@ const TodoEditModal: React.FC<TodoEditModalProps> = ({
   const [text, setText] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState('')
+  const [dueTime, setDueTime] = useState('')
   const [reminderDays, setReminderDays] = useState('')
 
   // Create date from input string without timezone issues
@@ -31,7 +32,11 @@ const TodoEditModal: React.FC<TodoEditModalProps> = ({
 
   // Format date for input
   const formatDateForInput = (date: Date | undefined) => {
-    if (!date) return ''
+    if (!date) {
+      // Default to today's date if no due date is set
+      const today = new Date()
+      return today.toISOString().split('T')[0]
+    }
     return date.toISOString().split('T')[0]
   }
 
@@ -41,6 +46,7 @@ const TodoEditModal: React.FC<TodoEditModalProps> = ({
       setText(todo.text)
       setDescription(todo.description || '')
       setDueDate(formatDateForInput(todo.dueDate))
+      setDueTime(todo.dueTime || '')
       setReminderDays(todo.reminderDays?.toString() || '')
     }
   }, [isOpen, todo])
@@ -67,6 +73,7 @@ const TodoEditModal: React.FC<TodoEditModalProps> = ({
       text: text.trim(),
       description: description.trim() || undefined,
       dueDate: dueDate ? createDateFromInput(dueDate) : undefined,
+      dueTime: dueTime.trim() || undefined,
       reminderDays: reminderDays ? parseInt(reminderDays) : undefined
     }
 
@@ -131,8 +138,8 @@ const TodoEditModal: React.FC<TodoEditModalProps> = ({
             />
           </div>
 
-          {/* Due Date and Reminder in a grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Due Date, Time, and Reminder in a grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Due Date */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
@@ -142,6 +149,19 @@ const TodoEditModal: React.FC<TodoEditModalProps> = ({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+                className="w-full px-4 py-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-600 transition-all duration-200"
+              />
+            </div>
+
+            {/* Due Time */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                Due Time
+              </label>
+              <input
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
                 className="w-full px-4 py-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-600 transition-all duration-200"
               />
             </div>

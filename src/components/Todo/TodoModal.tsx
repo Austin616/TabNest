@@ -17,6 +17,7 @@ const TodoModal: React.FC<TodoModalProps> = ({
   const [text, setText] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]) // Default to today
+  const [dueTime, setDueTime] = useState('')
   const [reminderDays, setReminderDays] = useState('')
 
   // Reset form when modal opens
@@ -25,6 +26,7 @@ const TodoModal: React.FC<TodoModalProps> = ({
       setText('')
       setDescription('')
       setDueDate(new Date().toISOString().split('T')[0]) // Reset to today
+      setDueTime('')
       setReminderDays('')
     }
   }, [isOpen])
@@ -55,6 +57,7 @@ const TodoModal: React.FC<TodoModalProps> = ({
       description: description.trim() || undefined,
       completed: false,
       dueDate: dueDate ? createDateFromInput(dueDate) : today, // Always set due date, default to today
+      dueTime: dueTime.trim() || undefined,
       reminderDays: reminderDays ? parseInt(reminderDays) : undefined,
       tags: []
     }
@@ -133,8 +136,8 @@ const TodoModal: React.FC<TodoModalProps> = ({
             />
           </div>
 
-          {/* Due Date and Reminder in a grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Due Date, Time, and Reminder in a grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Due Date */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
@@ -145,6 +148,19 @@ const TodoModal: React.FC<TodoModalProps> = ({
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 min={formatDateForInput(new Date())}
+                className="w-full px-4 py-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-600 transition-all duration-200"
+              />
+            </div>
+
+            {/* Due Time */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                Due Time
+              </label>
+              <input
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
                 className="w-full px-4 py-4 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-600 transition-all duration-200"
               />
             </div>

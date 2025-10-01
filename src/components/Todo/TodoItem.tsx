@@ -1,13 +1,14 @@
 import React from 'react'
 import { Edit2, X } from 'lucide-react'
 import type { Todo } from '../../types/todo'
+import { formatTimeForDisplay } from '../../utils/todoDateUtils'
 
 interface TodoItemProps {
   todo: Todo
   onToggleComplete: (id: string) => void
   onDelete: (id: string) => void
   onEdit?: (todo: Todo) => void
-  currentDate?: Date
+  dateFormat?: 'relative' | 'absolute'
 }
 
 const TodoItem: React.FC<TodoItemProps> = ({
@@ -15,40 +16,10 @@ const TodoItem: React.FC<TodoItemProps> = ({
   onToggleComplete,
   onDelete,
   onEdit,
-  currentDate = new Date()
+  dateFormat = 'relative'
 }) => {
-  const formatDueDate = (date: Date) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    
-    const dueDate = new Date(date)
-    dueDate.setHours(0, 0, 0, 0)
-    
-    const diffTime = dueDate.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    if (diffDays === 0) {
-      return 'Due today'
-    } else if (diffDays === 1) {
-      return 'Due tomorrow'
-    } else if (diffDays === -1) {
-      return 'Due yesterday'
-    } else if (diffDays < 0) {
-      return `${Math.abs(diffDays)} days overdue`
-    } else if (diffDays <= 7) {
-      return `Due in ${diffDays} days`
-    } else {
-      return `Due on ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-    }
-  }
-
   const isOverdue = todo.dueDate && todo.dueDate < new Date() && !todo.completed
-  const isDueToday = todo.dueDate && todo.dueDate.toDateString() === new Date().toDateString()
-  
-  // Check if task is showing early due to reminder
-  const isShowingEarly = todo.dueDate && todo.reminderDays && 
-    currentDate.toDateString() !== todo.dueDate.toDateString() &&
-    currentDate < todo.dueDate
+
 
   return (
     <div
@@ -96,23 +67,17 @@ const TodoItem: React.FC<TodoItemProps> = ({
             {todo.text}
           </span>
           
-          {todo.dueDate && (
+          {todo.dueTime && todo.dueDate && (
             <span
               className={`px-2 py-1 text-xs font-medium rounded-full ${
                 isOverdue
                   ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'
-                  : isDueToday
-                  ? 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300'
-                  : 'bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-400'
+                  : todo.completed
+                  ? 'bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-400'
+                  : 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
               }`}
             >
-              {formatDueDate(todo.dueDate)}
-            </span>
-          )}
-          
-          {isShowingEarly && (
-            <span className="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
-              📋 Coming up
+              🕐 {formatTimeForDisplay(todo.dueTime, todo.dueDate, dateFormat)}
             </span>
           )}
         </div>

@@ -5,6 +5,7 @@ export interface Todo {
   completed: boolean
   createdAt: Date
   dueDate?: Date
+  dueTime?: string // Time in HH:MM format (24-hour)
   reminderDays?: number // Number of days before due date to start showing
   tags?: string[]
 }

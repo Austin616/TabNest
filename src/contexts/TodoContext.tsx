@@ -100,6 +100,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
                   completed: todo.completed || false,
                   createdAt: parsedCreatedAt,
                   dueDate: parsedDueDate,
+                  dueTime: todo.dueTime,
                   reminderDays: todo.reminderDays,
                   tags: todo.tags || []
                 }
@@ -124,6 +125,7 @@ export const TodoProvider: React.FC<TodoProviderProps> = ({ children }) => {
               completed: todo.completed || false,
               createdAt: parseDate(todo.createdAt) || new Date(),
               dueDate: parseDate(todo.dueDate),
+              dueTime: todo.dueTime,
               reminderDays: todo.reminderDays,
               tags: todo.tags || []
             }))
