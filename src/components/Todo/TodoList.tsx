@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { ClipboardList } from 'lucide-react'
 import type { Todo, ViewMode, FilterMode, DateNavigation, TodoFilters } from '../../types/todo'
 import { useTodos } from '../../contexts/TodoContext'
+import { organizeTodosByDate, getEmptyStateMessage, isTaskReminderActive } from '../../utils/todoDateUtils'
 import TodoHeader from './TodoHeader'
 import TodoItem from './TodoItem'
 import TodoFiltersComponent from './TodoFilters'
@@ -49,62 +50,31 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick, onEditTodo }) => {
   }
 
 
-  // Check if task should be shown based on reminder settings
-  const shouldShowTask = (todo: Todo) => {
-    if (!todo.dueDate) return true // Show tasks without due dates
-    
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    
-    const dueDate = new Date(todo.dueDate)
-    dueDate.setHours(0, 0, 0, 0)
-    
-    if (!todo.reminderDays || todo.reminderDays === 0) {
-      // No reminder - show all tasks
-      return true
-    }
-    
-    // Calculate reminder start date
-    const reminderStartDate = new Date(dueDate)
-    reminderStartDate.setDate(dueDate.getDate() - todo.reminderDays)
-    
-    // Show task if today is within the reminder range (reminder start date to due date)
-    return today >= reminderStartDate && today <= dueDate
-  }
+  // Organize todos by date categories
+  const organizedTodos = useMemo(() => {
+    let todosToOrganize = todos
 
-  // Filter todos based on completion status and reminder settings
-  const filteredTodos = useMemo(() => {
-    let filtered = todos
-
-    // Filter by reminder settings first
-    filtered = filtered.filter(shouldShowTask)
-
-    // Filter by completion status
+    // Filter by completion status first if needed
     if (filters.mode === 'active') {
-      filtered = filtered.filter(todo => !todo.completed)
+      todosToOrganize = todosToOrganize.filter(todo => !todo.completed)
     } else if (filters.mode === 'completed') {
-      filtered = filtered.filter(todo => todo.completed)
+      todosToOrganize = todosToOrganize.filter(todo => todo.completed)
     }
 
-    // Sort: active tasks first, then by due date, then by creation date
-    return filtered.sort((a, b) => {
-      if (a.completed !== b.completed) {
-        return a.completed ? 1 : -1
-      }
-      
-      if (a.dueDate && b.dueDate) {
-        return a.dueDate.getTime() - b.dueDate.getTime()
-      }
-      
-      if (a.dueDate) return -1
-      if (b.dueDate) return 1
-      
-      return b.createdAt.getTime() - a.createdAt.getTime()
-    })
-  }, [todos, filters])
+    return organizeTodosByDate(todosToOrganize, navigation.currentDate, navigation.viewMode)
+  }, [todos, navigation.currentDate, navigation.viewMode, filters.mode])
 
-  const activeTodoCount = todos.filter(todo => !todo.completed).length
-  const completedTodoCount = todos.filter(todo => todo.completed).length
+  // Get all todos from organized groups for counts
+  const allFilteredTodos = organizedTodos.flatMap(group => group.todos)
+  
+  // Calculate counts based on current view (filtered todos)
+  const viewActiveTodoCount = allFilteredTodos.filter(todo => !todo.completed).length
+  const viewCompletedTodoCount = allFilteredTodos.filter(todo => todo.completed).length
+  const viewTotalTodoCount = allFilteredTodos.length
+
+  // Global counts for reference
+  const globalActiveTodoCount = todos.filter(todo => !todo.completed).length
+  const globalCompletedTodoCount = todos.filter(todo => todo.completed).length
 
   return (
     <div className="space-y-6">
@@ -119,13 +89,13 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick, onEditTodo }) => {
         filters={filters}
         onFilterModeChange={changeFilterMode}
         onToggleFilters={toggleFilters}
-        activeTodoCount={activeTodoCount}
-        completedTodoCount={completedTodoCount}
-        totalTodoCount={todos.length}
+        activeTodoCount={viewActiveTodoCount}
+        completedTodoCount={viewCompletedTodoCount}
+        totalTodoCount={viewTotalTodoCount}
       />
 
-      <div className="space-y-3">
-        {filteredTodos.length === 0 ? (
+      <div className="space-y-6">
+        {organizedTodos.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-slate-400 dark:text-slate-500 mb-2">
               <ClipboardList className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -135,7 +105,7 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick, onEditTodo }) => {
                 ? 'No completed tasks'
                 : filters.mode === 'active'
                 ? 'No active tasks'
-                : 'No tasks yet'
+                : getEmptyStateMessage(navigation.currentDate, navigation.viewMode)
               }
             </p>
             {filters.mode !== 'all' && (
@@ -148,26 +118,86 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick, onEditTodo }) => {
             )}
           </div>
         ) : (
-          filteredTodos.map((todo) => (
-            <TodoItem
-              key={todo.id}
-              todo={todo}
-              onToggleComplete={toggleTodoComplete}
-              onDelete={deleteTodo}
-              onEdit={onEditTodo}
-              currentDate={navigation.currentDate}
-            />
+          organizedTodos.map((group, groupIndex) => (
+            <div key={`${group.type}-${groupIndex}`} className="space-y-3">
+              {/* Group Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className={`text-sm font-semibold tracking-wide ${
+                    group.type === 'overdue' 
+                      ? 'text-red-600 dark:text-red-400'
+                      : group.type === 'today'
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : group.type === 'completed'
+                      ? 'text-slate-500 dark:text-slate-500'
+                      : group.title.includes('(Reminder)')
+                      ? 'text-orange-600 dark:text-orange-400'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}>
+                    {group.title}
+                  </h3>
+                  {group.title.includes('(Reminder)') && (
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                    </div>
+                  )}
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  group.type === 'overdue'
+                    ? 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30'
+                    : group.type === 'today'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30'
+                    : group.type === 'completed'
+                    ? 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700'
+                    : group.title.includes('(Reminder)')
+                    ? 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30'
+                    : 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700'
+                }`}>
+                  {group.todos.length}
+                </span>
+              </div>
+
+              {/* Group Tasks */}
+              <div className={`space-y-3 pl-4 border-l-2 ${
+                group.type === 'overdue'
+                  ? 'border-red-300 dark:border-red-600'
+                  : group.type === 'today'
+                  ? 'border-blue-300 dark:border-blue-600'
+                  : group.type === 'completed'
+                  ? 'border-slate-200 dark:border-slate-700'
+                  : group.title.includes('(Reminder)')
+                  ? 'border-orange-300 dark:border-orange-600'
+                  : 'border-slate-200 dark:border-slate-700'
+              }`}>
+                {group.todos.map((todo) => {
+                  const hasActiveReminder = isTaskReminderActive(todo, navigation.currentDate)
+                  return (
+                    <div key={todo.id} className={`${
+                      hasActiveReminder ? 'ring-2 ring-orange-200 dark:ring-orange-800 rounded-lg' : ''
+                    } ${group.type === 'completed' ? 'opacity-60' : ''}`}>
+                      <TodoItem
+                        todo={todo}
+                        onToggleComplete={toggleTodoComplete}
+                        onDelete={deleteTodo}
+                        onEdit={onEditTodo}
+                        currentDate={navigation.currentDate}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           ))
         )}
       </div>
 
       {/* Quick stats for week view */}
-      {navigation.viewMode === 'week' && filteredTodos.length > 0 && (
+      {navigation.viewMode === 'week' && allFilteredTodos.length > 0 && (
         <div className="flex justify-center">
           <div className="flex gap-6 text-sm text-slate-600 dark:text-slate-400 bg-white/40 dark:bg-slate-700/40 rounded-lg px-4 py-2 border border-slate-200/50 dark:border-slate-600/50">
-            <span>Total: {filteredTodos.length}</span>
-            <span>Active: {filteredTodos.filter(t => !t.completed).length}</span>
-            <span>Completed: {filteredTodos.filter(t => t.completed).length}</span>
+            <span>Total: {allFilteredTodos.length}</span>
+            <span>Active: {allFilteredTodos.filter(t => !t.completed).length}</span>
+            <span>Completed: {allFilteredTodos.filter(t => t.completed).length}</span>
           </div>
         </div>
       )}
