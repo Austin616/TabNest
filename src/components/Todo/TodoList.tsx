@@ -16,7 +16,8 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick, onEditTodo }) => {
   const { todos, toggleTodoComplete, deleteTodo } = useTodos()
   const [navigation, setNavigation] = useState<DateNavigation>({
     currentDate: new Date(),
-    viewMode: 'day'
+    viewMode: 'day',
+    dateFormat: 'relative'
   })
   const [filters, setFilters] = useState<TodoFilters>({
     mode: 'all',
@@ -41,6 +42,10 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick, onEditTodo }) => {
     setNavigation(prev => ({ ...prev, viewMode }))
   }
 
+  const changeDateFormat = (dateFormat: 'relative' | 'absolute') => {
+    setNavigation(prev => ({ ...prev, dateFormat }))
+  }
+
   const changeFilterMode = (mode: FilterMode) => {
     setFilters(prev => ({ ...prev, mode }))
   }
@@ -61,8 +66,8 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick, onEditTodo }) => {
       todosToOrganize = todosToOrganize.filter(todo => todo.completed)
     }
 
-    return organizeTodosByDate(todosToOrganize, navigation.currentDate, navigation.viewMode)
-  }, [todos, navigation.currentDate, navigation.viewMode, filters.mode])
+    return organizeTodosByDate(todosToOrganize, navigation.currentDate, navigation.viewMode, navigation.dateFormat)
+  }, [todos, navigation.currentDate, navigation.viewMode, navigation.dateFormat, filters.mode])
 
   // Get all todos from organized groups for counts
   const allFilteredTodos = organizedTodos.flatMap(group => group.todos)
@@ -72,16 +77,13 @@ const TodoList: React.FC<TodoListProps> = ({ onAddTaskClick, onEditTodo }) => {
   const viewCompletedTodoCount = allFilteredTodos.filter(todo => todo.completed).length
   const viewTotalTodoCount = allFilteredTodos.length
 
-  // Global counts for reference
-  const globalActiveTodoCount = todos.filter(todo => !todo.completed).length
-  const globalCompletedTodoCount = todos.filter(todo => todo.completed).length
-
   return (
     <div className="space-y-6">
       <TodoHeader
         navigation={navigation}
         onNavigateDate={navigateDate}
         onViewModeChange={changeViewMode}
+        onDateFormatChange={changeDateFormat}
         onAddTask={onAddTaskClick}
       />
 

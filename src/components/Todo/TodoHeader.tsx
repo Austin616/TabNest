@@ -6,6 +6,7 @@ interface TodoHeaderProps {
   navigation: DateNavigation
   onNavigateDate: (direction: 'prev' | 'next') => void
   onViewModeChange: (mode: ViewMode) => void
+  onDateFormatChange: (format: 'relative' | 'absolute') => void
   onAddTask: () => void
 }
 
@@ -13,6 +14,7 @@ const TodoHeader: React.FC<TodoHeaderProps> = ({
   navigation,
   onNavigateDate,
   onViewModeChange,
+  onDateFormatChange,
   onAddTask
 }) => {
   const formatHeaderDate = () => {
@@ -84,6 +86,31 @@ const TodoHeader: React.FC<TodoHeaderProps> = ({
             }`}
           >
             Week
+          </button>
+        </div>
+        
+        <div className="flex items-center gap-2 bg-white/40 dark:bg-slate-700/40 rounded-lg p-1 border border-slate-200/50 dark:border-slate-600/50">
+          <button
+            onClick={() => onDateFormatChange('relative')}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+              navigation.dateFormat === 'relative'
+                ? 'bg-emerald-500 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-600/60'
+            }`}
+            title="Show relative dates (Today, Tomorrow, etc.)"
+          >
+            Relative
+          </button>
+          <button
+            onClick={() => onDateFormatChange('absolute')}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
+              navigation.dateFormat === 'absolute'
+                ? 'bg-emerald-500 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-600/60'
+            }`}
+            title="Show absolute dates (Oct 1, Sep 28, etc.)"
+          >
+            Absolute
           </button>
         </div>
       </div>

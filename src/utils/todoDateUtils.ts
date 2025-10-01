@@ -6,13 +6,23 @@ export interface TodoGroup {
   type: 'overdue' | 'today' | 'upcoming' | 'no-date' | 'completed'
 }
 
-export const formatDateForDisplay = (date: Date): string => {
+export const formatDateForDisplay = (date: Date, format: 'relative' | 'absolute' = 'relative'): string => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
   const targetDate = new Date(date)
   targetDate.setHours(0, 0, 0, 0)
   
+  if (format === 'absolute') {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      month: 'short', 
+      day: 'numeric',
+      year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+    })
+  }
+  
+  // Relative format (existing logic)
   const diffTime = targetDate.getTime() - today.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   
@@ -93,7 +103,7 @@ export const isTaskReminderActive = (todo: Todo, currentDate: Date): boolean => 
   return checkDate >= reminderStartDate && checkDate < dueDate
 }
 
-export const organizeTodosByDate = (todos: Todo[], currentDate: Date, viewMode: 'day' | 'week' = 'day'): TodoGroup[] => {
+export const organizeTodosByDate = (todos: Todo[], currentDate: Date, viewMode: 'day' | 'week' = 'day', dateFormat: 'relative' | 'absolute' = 'relative'): TodoGroup[] => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
@@ -198,7 +208,7 @@ export const organizeTodosByDate = (todos: Todo[], currentDate: Date, viewMode: 
       const todosForDate = overdueByDate.get(dateKey)!
       
       groups.push({
-        title: formatDateForDisplay(date),
+        title: formatDateForDisplay(date, dateFormat),
         todos: sortTodos(todosForDate),
         type: 'overdue'
       })
@@ -207,7 +217,7 @@ export const organizeTodosByDate = (todos: Todo[], currentDate: Date, viewMode: 
   
   if (todayTodos.length > 0) {
     const isToday = currentDateNormalized.getTime() === today.getTime()
-    const title = isToday ? formatDateForDisplay(today) : formatDateForDisplay(currentDate)
+    const title = isToday ? formatDateForDisplay(today, dateFormat) : formatDateForDisplay(currentDate, dateFormat)
     groups.push({
       title,
       todos: sortTodos(todayTodos),
@@ -239,7 +249,7 @@ export const organizeTodosByDate = (todos: Todo[], currentDate: Date, viewMode: 
       const todosForDate = reminderByDate.get(dateKey)!
       
       groups.push({
-        title: `${formatDateForDisplay(date)} (Reminder)`,
+        title: `${formatDateForDisplay(date, dateFormat)} (Reminder)`,
         todos: sortTodos(todosForDate),
         type: 'upcoming'
       })
@@ -270,7 +280,7 @@ export const organizeTodosByDate = (todos: Todo[], currentDate: Date, viewMode: 
       const todosForDate = upcomingByDate.get(dateKey)!
       
       groups.push({
-        title: formatDateForDisplay(date),
+        title: formatDateForDisplay(date, dateFormat),
         todos: sortTodos(todosForDate),
         type: 'upcoming'
       })
@@ -313,7 +323,7 @@ export const organizeTodosByDate = (todos: Todo[], currentDate: Date, viewMode: 
       const todosForDate = completedByDate.get(dateKey)!
       
       groups.push({
-        title: `${formatDateForDisplay(date)} (Completed)`,
+        title: `${formatDateForDisplay(date, dateFormat)} (Completed)`,
         todos: sortTodos(todosForDate),
         type: 'completed'
       })

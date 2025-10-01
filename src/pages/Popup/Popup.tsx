@@ -98,6 +98,7 @@ const Popup: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [viewMode, setViewMode] = useState<ViewMode>('day')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [dateFormat, setDateFormat] = useState<'relative' | 'absolute'>('relative')
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
 
   // Create date from input string without timezone issues
@@ -248,7 +249,7 @@ const Popup: React.FC = () => {
   }
 
   // Organize todos by date categories
-  const organizedTodos = organizeTodosByDate(todos, currentDate, viewMode)
+  const organizedTodos = organizeTodosByDate(todos, currentDate, viewMode, dateFormat)
   const allFilteredTodos = organizedTodos.flatMap(group => group.todos)
   const activeTodos = allFilteredTodos.filter(todo => !todo.completed)
 
@@ -293,6 +294,34 @@ const Popup: React.FC = () => {
             >
               <CalendarDays className="w-3 h-3" />
               Week
+            </button>
+          </div>
+        </div>
+
+        {/* Date Format Toggle */}
+        <div className="flex items-center justify-center mb-3">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+            <button
+              onClick={() => setDateFormat('relative')}
+              className={`px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
+                dateFormat === 'relative'
+                  ? 'bg-emerald-500 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+              title="Show relative dates (Today, Tomorrow, etc.)"
+            >
+              Relative
+            </button>
+            <button
+              onClick={() => setDateFormat('absolute')}
+              className={`px-2 py-1 rounded-md text-xs font-medium transition-all duration-200 ${
+                dateFormat === 'absolute'
+                  ? 'bg-emerald-500 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+              title="Show absolute dates (Oct 1, Sep 28, etc.)"
+            >
+              Absolute
             </button>
           </div>
         </div>

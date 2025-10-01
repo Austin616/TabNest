@@ -20,4 +20,5 @@ export interface TodoFilters {
 export interface DateNavigation {
   currentDate: Date
   viewMode: ViewMode
+  dateFormat: 'relative' | 'absolute'
 }
