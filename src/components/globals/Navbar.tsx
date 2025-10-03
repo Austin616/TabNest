@@ -1,9 +1,11 @@
 
 import { useState, useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { Sun, Moon } from 'lucide-react'
 
 const Navbar = () => {
   const [isDark, setIsDark] = useState(false)
+  const location = useLocation()
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme')
@@ -35,12 +37,26 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-8">
-            <a
-              href="/dashboard"
-              className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-all duration-200 hover:scale-105"
+            <Link
+              to="/dashboard"
+              className={`font-medium transition-all duration-200 hover:scale-105 ${
+                location.pathname === '/dashboard'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
             >
               Dashboard
-            </a>
+            </Link>
+            <Link
+              to="/calendar"
+              className={`font-medium transition-all duration-200 hover:scale-105 ${
+                location.pathname === '/calendar'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
+            >
+              Calendar
+            </Link>
             <a
               href="/stats"
               className="text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-all duration-200 hover:scale-105"
