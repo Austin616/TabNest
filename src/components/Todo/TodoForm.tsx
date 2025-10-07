@@ -11,7 +11,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
   const [text, setText] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]) // Default to today
-  const [dueTime, setDueTime] = useState('')
+  const [dueTime, setDueTime] = useState('23:59')
   const [reminder, setReminder] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
 
@@ -27,7 +27,7 @@ const TodoForm: React.FC<TodoFormProps> = ({ onAddTodo }) => {
       description: description.trim() || undefined,
       completed: false,
       dueDate: dueDate ? createDateFromInput(dueDate) : today, // Always set due date, default to today
-      dueTime: dueTime.trim() || undefined,
+      dueTime: dueTime.trim() || '23:59',
       reminderDays: reminder ? parseInt(reminder) : undefined,
       tags: []
     }

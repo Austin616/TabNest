@@ -104,7 +104,7 @@ const Popup: React.FC = () => {
   const [newTask, setNewTask] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState('')
-  const [dueTime, setDueTime] = useState('')
+  const [dueTime, setDueTime] = useState('23:59')
   const [reminderDays, setReminderDays] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -186,7 +186,7 @@ const Popup: React.FC = () => {
       description: description.trim() || undefined,
       completed: false,
       dueDate: dueDate ? createDateFromInput(dueDate) : today, // Always set due date, default to today
-      dueTime: dueTime.trim() || undefined,
+      dueTime: dueTime.trim() || '23:59',
       reminderDays: reminderDays ? parseInt(reminderDays) : undefined,
       tags: []
     }
@@ -197,7 +197,7 @@ const Popup: React.FC = () => {
     setNewTask('')
     setDescription('')
     setDueDate('')
-    setDueTime('')
+    setDueTime('23:59')
     setReminderDays('')
     setShowAdvanced(false)
   }

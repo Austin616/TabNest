@@ -46,7 +46,7 @@ const TodoEditModal: React.FC<TodoEditModalProps> = ({
       setText(todo.text)
       setDescription(todo.description || '')
       setDueDate(formatDateForInput(todo.dueDate))
-      setDueTime(todo.dueTime || '')
+      setDueTime(todo.dueTime || '23:59')
       setReminderDays(todo.reminderDays?.toString() || '')
     }
   }, [isOpen, todo])

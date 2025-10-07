@@ -4,7 +4,7 @@ import { useTodos } from '../../contexts/TodoContext'
 import CalendarDayModal from '../../components/Calendar/CalendarDayModal'
 import type { Todo } from '../../types/todo'
 
-type CalendarView = 'month' | 'week'
+type CalendarView = 'month' | 'week' | 'day'
 
 const CalendarPage: React.FC = () => {
   const { todos } = useTodos()
@@ -103,6 +103,18 @@ const CalendarPage: React.FC = () => {
     })
   }
 
+  const navigateDay = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => {
+      const newDate = new Date(prev)
+      if (direction === 'prev') {
+        newDate.setDate(prev.getDate() - 1)
+      } else {
+        newDate.setDate(prev.getDate() + 1)
+      }
+      return newDate
+    })
+  }
+
   const goToToday = () => {
     setCurrentDate(new Date())
   }
@@ -183,6 +195,16 @@ const CalendarPage: React.FC = () => {
               >
                 Week
               </button>
+              <button
+                onClick={() => setViewMode('day')}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                  viewMode === 'day'
+                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                Day
+              </button>
             </div>
           </div>
         </div>
@@ -193,7 +215,13 @@ const CalendarPage: React.FC = () => {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center space-x-4">
               <button
-                onClick={viewMode === 'month' ? () => navigateMonth('prev') : () => navigateWeek('prev')}
+                onClick={
+                  viewMode === 'month' 
+                    ? () => navigateMonth('prev') 
+                    : viewMode === 'week' 
+                    ? () => navigateWeek('prev')
+                    : () => navigateDay('prev')
+                }
                 className="p-3 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <ChevronLeft className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -202,12 +230,25 @@ const CalendarPage: React.FC = () => {
               <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 {viewMode === 'month' 
                   ? currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                  : `${weekDays[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekDays[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                  : viewMode === 'week'
+                  ? `${weekDays[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekDays[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                  : currentDate.toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })
                 }
               </h2>
               
               <button
-                onClick={viewMode === 'month' ? () => navigateMonth('next') : () => navigateWeek('next')}
+                onClick={
+                  viewMode === 'month' 
+                    ? () => navigateMonth('next') 
+                    : viewMode === 'week' 
+                    ? () => navigateWeek('next')
+                    : () => navigateDay('next')
+                }
                 className="p-3 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <ChevronRight className="w-6 h-6 text-slate-600 dark:text-slate-400" />
@@ -307,7 +348,7 @@ const CalendarPage: React.FC = () => {
                 })}
               </div>
             </div>
-          ) : (
+          ) : viewMode === 'week' ? (
             <div className="space-y-6">
               {/* Week view */}
               <div className="grid grid-cols-7 gap-6">
@@ -370,6 +411,144 @@ const CalendarPage: React.FC = () => {
                     </div>
                   )
                 })}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Day view */}
+              <div className="max-w-4xl mx-auto">
+                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-8">
+                  <div className="text-center mb-8">
+                    <div className="text-6xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                      {currentDate.getDate()}
+                    </div>
+                    <div className="text-xl text-slate-600 dark:text-slate-400">
+                      {currentDate.toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    {(() => {
+                      const dayTodos = getTodosForDate(currentDate)
+                      const completedTodos = dayTodos.filter(todo => todo.completed)
+                      const pendingTodos = dayTodos.filter(todo => !todo.completed)
+                      const overdueTodos = pendingTodos.filter(todo => 
+                        todo.dueDate && todo.dueDate < new Date() && !todo.completed
+                      )
+                      
+                      return (
+                        <>
+                          {overdueTodos.length > 0 && (
+                            <div className="space-y-3">
+                              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center">
+                                <span className="w-3 h-3 bg-red-500 rounded-full mr-3"></span>
+                                Overdue Tasks ({overdueTodos.length})
+                              </h3>
+                              <div className="space-y-2">
+                                {overdueTodos.map(todo => (
+                                  <div
+                                    key={todo.id}
+                                    className="p-4 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:shadow-md cursor-pointer transition-all"
+                                    onClick={() => handleDayClick(currentDate)}
+                                  >
+                                    <div className="font-medium">{todo.text}</div>
+                                    {todo.description && (
+                                      <div className="text-sm opacity-75 mt-1">{todo.description}</div>
+                                    )}
+                                    {todo.dueTime && (
+                                      <div className="text-sm opacity-75 mt-1">
+                                        Due at {todo.dueTime}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {pendingTodos.filter(todo => !overdueTodos.includes(todo)).length > 0 && (
+                            <div className="space-y-3">
+                              <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-400 flex items-center">
+                                <span className="w-3 h-3 bg-blue-500 rounded-full mr-3"></span>
+                                Today's Tasks ({pendingTodos.filter(todo => !overdueTodos.includes(todo)).length})
+                              </h3>
+                              <div className="space-y-2">
+                                {pendingTodos.filter(todo => !overdueTodos.includes(todo)).map(todo => (
+                                  <div
+                                    key={todo.id}
+                                    className="p-4 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:shadow-md cursor-pointer transition-all"
+                                    onClick={() => handleDayClick(currentDate)}
+                                  >
+                                    <div className="font-medium">{todo.text}</div>
+                                    {todo.description && (
+                                      <div className="text-sm opacity-75 mt-1">{todo.description}</div>
+                                    )}
+                                    {todo.dueTime && (
+                                      <div className="text-sm opacity-75 mt-1">
+                                        Due at {todo.dueTime}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {completedTodos.length > 0 && (
+                            <div className="space-y-3">
+                              <h3 className="text-lg font-semibold text-green-600 dark:text-green-400 flex items-center">
+                                <span className="w-3 h-3 bg-green-500 rounded-full mr-3"></span>
+                                Completed Tasks ({completedTodos.length})
+                              </h3>
+                              <div className="space-y-2">
+                                {completedTodos.map(todo => (
+                                  <div
+                                    key={todo.id}
+                                    className="p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg line-through opacity-75"
+                                  >
+                                    <div className="font-medium">{todo.text}</div>
+                                    {todo.description && (
+                                      <div className="text-sm opacity-75 mt-1">{todo.description}</div>
+                                    )}
+                                    {todo.dueTime && (
+                                      <div className="text-sm opacity-75 mt-1">
+                                        Completed at {todo.dueTime}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {dayTodos.length === 0 && (
+                            <div className="text-center py-12">
+                              <div className="text-slate-400 dark:text-slate-500 text-lg mb-2">
+                                No tasks for this day
+                              </div>
+                              <div className="text-slate-400 dark:text-slate-500 text-sm">
+                                Click anywhere to add a task
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )
+                    })()}
+                  </div>
+                  
+                  <div className="mt-8 text-center">
+                    <button
+                      onClick={() => handleDayClick(currentDate)}
+                      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                    >
+                      Add Task for Today
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

@@ -16,7 +16,7 @@ const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, se
   const [newTask, setNewTask] = useState({
     text: '',
     description: '',
-    dueTime: '',
+    dueTime: '23:59',
     reminderDays: ''
   })
   const [editTask, setEditTask] = useState({
@@ -87,18 +87,18 @@ const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, se
       description: newTask.description.trim() || undefined,
       completed: false,
       dueDate: selectedDate || today,
-      dueTime: newTask.dueTime.trim() || undefined,
+      dueTime: newTask.dueTime.trim() || '23:59',
       reminderDays: newTask.reminderDays ? parseInt(newTask.reminderDays) : undefined,
       tags: []
     }
 
     addTodo(newTodo)
-    setNewTask({ text: '', description: '', dueTime: '', reminderDays: '' })
+    setNewTask({ text: '', description: '', dueTime: '23:59', reminderDays: '' })
     setIsAddingTask(false)
   }
 
   const handleCancelAdd = () => {
-    setNewTask({ text: '', description: '', dueTime: '', reminderDays: '' })
+    setNewTask({ text: '', description: '', dueTime: '23:59', reminderDays: '' })
     setIsAddingTask(false)
   }
 
@@ -106,7 +106,7 @@ const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, se
     // Reset all form states when closing
     setIsAddingTask(false)
     setEditingTask(null)
-    setNewTask({ text: '', description: '', dueTime: '', reminderDays: '' })
+    setNewTask({ text: '', description: '', dueTime: '23:59', reminderDays: '' })
     setEditTask({ text: '', description: '', dueTime: '', reminderDays: '' })
     onClose()
   }

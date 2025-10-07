@@ -18,7 +18,7 @@ const TodoModal: React.FC<TodoModalProps> = ({
   const [text, setText] = useState('')
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]) // Default to today
-  const [dueTime, setDueTime] = useState('')
+  const [dueTime, setDueTime] = useState('23:59')
   const [reminderDays, setReminderDays] = useState('')
 
   // Reset form when modal opens
@@ -28,7 +28,7 @@ const TodoModal: React.FC<TodoModalProps> = ({
       setDescription('')
       // Use currentDate if provided, otherwise default to today
       setDueDate(formatDateForInput(currentDate || new Date()))
-      setDueTime('')
+      setDueTime('23:59')
       setReminderDays('')
     }
   }, [isOpen, currentDate])
@@ -59,7 +59,7 @@ const TodoModal: React.FC<TodoModalProps> = ({
       description: description.trim() || undefined,
       completed: false,
       dueDate: dueDate ? createDateFromInput(dueDate) : today, // Always set due date, default to today
-      dueTime: dueTime.trim() || undefined,
+      dueTime: dueTime.trim() || '23:59',
       reminderDays: reminderDays ? parseInt(reminderDays) : undefined,
       tags: []
     }
