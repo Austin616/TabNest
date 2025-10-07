@@ -344,13 +344,14 @@ const CalendarPage: React.FC = () => {
                           dayTodos.map(todo => (
                             <div
                               key={todo.id}
-                              className={`p-3 rounded-lg text-sm transition-all hover:shadow-md ${
+                              className={`p-3 rounded-lg text-sm transition-all hover:shadow-md cursor-pointer ${
                                 todo.completed
                                   ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 line-through'
                                   : todo.dueDate && todo.dueDate < new Date() && !todo.completed
                                   ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                  : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800/40'
                               }`}
+                              onClick={() => handleDayClick(date)}
                             >
                               <div className="font-medium">{todo.text}</div>
                               {todo.dueTime && (

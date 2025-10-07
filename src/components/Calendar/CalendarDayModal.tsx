@@ -10,9 +10,16 @@ interface CalendarDayModalProps {
 }
 
 const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, selectedDate }) => {
-  const { todos, addTodo, toggleTodoComplete } = useTodos()
+  const { todos, addTodo, toggleTodoComplete, editTodo } = useTodos()
   const [isAddingTask, setIsAddingTask] = useState(false)
+  const [editingTask, setEditingTask] = useState<Todo | null>(null)
   const [newTask, setNewTask] = useState({
+    text: '',
+    description: '',
+    dueTime: '',
+    reminderDays: ''
+  })
+  const [editTask, setEditTask] = useState({
     text: '',
     description: '',
     dueTime: '',
@@ -95,76 +102,212 @@ const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, se
     setIsAddingTask(false)
   }
 
-  const TaskItem: React.FC<{ todo: Todo }> = ({ todo }) => (
-    <div className={`p-4 rounded-lg border transition-all hover:shadow-md ${
-      todo.completed
-        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-        : overdueTodos.includes(todo)
-        ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-    }`}>
-      <div className="flex items-start space-x-3">
-        <button
-          onClick={() => toggleTodoComplete(todo.id)}
-          className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-            todo.completed
-              ? 'bg-green-500 border-green-500 text-white'
-              : 'border-slate-300 dark:border-slate-600 hover:border-green-400'
-          }`}
-        >
-          {todo.completed && (
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          )}
-        </button>
-        
-        <div className="flex-1 min-w-0">
-          <h3 className={`font-medium text-slate-900 dark:text-slate-100 ${
-            todo.completed ? 'line-through opacity-60' : ''
-          }`}>
-            {todo.text}
-          </h3>
+  const handleClose = () => {
+    // Reset all form states when closing
+    setIsAddingTask(false)
+    setEditingTask(null)
+    setNewTask({ text: '', description: '', dueTime: '', reminderDays: '' })
+    setEditTask({ text: '', description: '', dueTime: '', reminderDays: '' })
+    onClose()
+  }
+
+  const handleEditTask = (todo: Todo) => {
+    setEditingTask(todo)
+    setEditTask({
+      text: todo.text,
+      description: todo.description || '',
+      dueTime: todo.dueTime || '',
+      reminderDays: todo.reminderDays?.toString() || ''
+    })
+  }
+
+  const handleSaveEdit = () => {
+    if (!editingTask || editTask.text.trim() === '') return
+
+    editTodo(editingTask.id, {
+      text: editTask.text.trim(),
+      description: editTask.description.trim() || undefined,
+      dueTime: editTask.dueTime.trim() || undefined,
+      reminderDays: editTask.reminderDays ? parseInt(editTask.reminderDays) : undefined
+    })
+
+    setEditingTask(null)
+    setEditTask({ text: '', description: '', dueTime: '', reminderDays: '' })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingTask(null)
+    setEditTask({ text: '', description: '', dueTime: '', reminderDays: '' })
+  }
+
+  const TaskItem: React.FC<{ todo: Todo }> = ({ todo }) => {
+    const isEditing = editingTask?.id === todo.id
+
+    if (isEditing) {
+      return (
+        <div className="p-4 rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                Task <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={editTask.text}
+                onChange={(e) => setEditTask(prev => ({ ...prev, text: e.target.value }))}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                Description
+              </label>
+              <textarea
+                value={editTask.description}
+                onChange={(e) => setEditTask(prev => ({ ...prev, description: e.target.value }))}
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  Due Time
+                </label>
+                <input
+                  type="time"
+                  value={editTask.dueTime}
+                  onChange={(e) => setEditTask(prev => ({ ...prev, dueTime: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  Show in advance
+                </label>
+                <select
+                  value={editTask.reminderDays}
+                  onChange={(e) => setEditTask(prev => ({ ...prev, reminderDays: e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Only on due date</option>
+                  <option value="1">1 day before</option>
+                  <option value="2">2 days before</option>
+                  <option value="3">3 days before</option>
+                  <option value="7">1 week before</option>
+                  <option value="14">2 weeks before</option>
+                  <option value="30">1 month before</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex space-x-2">
+              <button
+                onClick={handleSaveEdit}
+                disabled={editTask.text.trim() === ''}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Save
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div 
+        className={`p-4 rounded-lg border transition-all hover:shadow-md cursor-pointer ${
+          todo.completed
+            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+            : overdueTodos.includes(todo)
+            ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
+        }`}
+        onClick={() => handleEditTask(todo)}
+      >
+        <div className="flex items-start space-x-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleTodoComplete(todo.id)
+            }}
+            className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+              todo.completed
+                ? 'bg-green-500 border-green-500 text-white'
+                : 'border-slate-300 dark:border-slate-600 hover:border-green-400'
+            }`}
+          >
+            {todo.completed && (
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            )}
+          </button>
           
-          {todo.description && (
-            <p className={`mt-1 text-sm text-slate-600 dark:text-slate-400 ${
+          <div className="flex-1 min-w-0">
+            <h3 className={`font-medium text-slate-900 dark:text-slate-100 ${
               todo.completed ? 'line-through opacity-60' : ''
             }`}>
-              {todo.description}
-            </p>
-          )}
-          
-          <div className="mt-2 flex flex-wrap gap-3 text-xs">
-            {todo.dueTime && (
-              <div className="flex items-center space-x-1 text-blue-600 dark:text-blue-400">
-                <Clock className="w-3 h-3" />
-                <span>{formatTime(todo.dueTime)}</span>
-              </div>
+              {todo.text}
+            </h3>
+            
+            {todo.description && (
+              <p className={`mt-1 text-sm text-slate-600 dark:text-slate-400 ${
+                todo.completed ? 'line-through opacity-60' : ''
+              }`}>
+                {todo.description}
+              </p>
             )}
             
-            {todo.dueDate && (
-              <div className="flex items-center space-x-1 text-slate-500 dark:text-slate-400">
-                <CalendarIcon className="w-3 h-3" />
-                <span>Due: {todo.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-              </div>
-            )}
-            
-            {todo.reminderDays && todo.dueDate && (
-              <div className="flex items-center space-x-1 text-amber-600 dark:text-amber-400">
-                <Bell className="w-3 h-3" />
-                <span>Reminder: {formatReminderDate(todo.reminderDays, todo.dueDate)}</span>
-              </div>
-            )}
+            <div className="mt-2 flex flex-wrap gap-3 text-xs">
+              {todo.dueTime && (
+                <div className="flex items-center space-x-1 text-blue-600 dark:text-blue-400">
+                  <Clock className="w-3 h-3" />
+                  <span>{formatTime(todo.dueTime)}</span>
+                </div>
+              )}
+              
+              {todo.dueDate && (
+                <div className="flex items-center space-x-1 text-slate-500 dark:text-slate-400">
+                  <CalendarIcon className="w-3 h-3" />
+                  <span>Due: {todo.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                </div>
+              )}
+              
+              {todo.reminderDays && todo.dueDate && (
+                <div className="flex items-center space-x-1 text-amber-600 dark:text-amber-400">
+                  <Bell className="w-3 h-3" />
+                  <span>Reminder: {formatReminderDate(todo.reminderDays, todo.dueDate)}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+      <div 
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        onClick={handleClose}
+      >
+        <div 
+          className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
             <div>
@@ -191,7 +334,7 @@ const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, se
               )}
               
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />

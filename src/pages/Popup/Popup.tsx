@@ -80,7 +80,7 @@ const TodoInlineEdit: React.FC<{
             // Open dashboard with this specific todo for editing
             if (typeof chrome !== 'undefined' && chrome.tabs) {
               chrome.tabs.create({ 
-                url: chrome.runtime.getURL(`index.html?edit=${todo.id}`) 
+                url: chrome.runtime.getURL(`index.html#/dashboard?edit=${todo.id}`) 
               })
             } else {
               // Fallback for development
@@ -214,7 +214,7 @@ const Popup: React.FC = () => {
 
   const openDashboard = () => {
     if (typeof chrome !== 'undefined' && chrome.tabs) {
-      chrome.tabs.create({ url: chrome.runtime.getURL('index.html') })
+      chrome.tabs.create({ url: chrome.runtime.getURL('index.html#/dashboard') })
     } else {
       // Fallback for development
       window.open('/dashboard', '_blank')
