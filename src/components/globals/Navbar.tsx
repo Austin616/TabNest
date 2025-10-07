@@ -31,31 +31,21 @@ const Navbar = () => {
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         <div className="flex items-center space-x-10">
           <div className="flex items-center">
-            <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 dark:from-blue-400 dark:to-emerald-400 bg-clip-text text-transparent">
+            <Link to="/" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 dark:from-blue-400 dark:to-emerald-400 bg-clip-text text-transparent hover:scale-105 transition-transform">
               TabNest
-            </div>
+            </Link>
           </div>
 
           <div className="hidden md:flex items-center space-x-8">
             <Link
-              to="/dashboard"
+              to="/"
               className={`font-medium transition-all duration-200 hover:scale-105 ${
-                location.pathname === '/dashboard'
+                location.pathname === '/'
                   ? 'text-blue-600 dark:text-blue-400'
                   : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400'
               }`}
             >
               Dashboard
-            </Link>
-            <Link
-              to="/calendar"
-              className={`font-medium transition-all duration-200 hover:scale-105 ${
-                location.pathname === '/calendar'
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400'
-              }`}
-            >
-              Calendar
             </Link>
             <a
               href="/stats"

@@ -214,10 +214,10 @@ const Popup: React.FC = () => {
 
   const openDashboard = () => {
     if (typeof chrome !== 'undefined' && chrome.tabs) {
-      chrome.tabs.create({ url: chrome.runtime.getURL('index.html#/dashboard') })
+      chrome.tabs.create({ url: chrome.runtime.getURL('index.html#/') })
     } else {
       // Fallback for development
-      window.open('/dashboard', '_blank')
+      window.open('/', '_blank')
     }
   }
 

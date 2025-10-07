@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import './App.css'
 import Navbar from './components/globals/Navbar'
 import Dashboard from './pages/Dashboard/Dashboard'
-import { CalendarPage } from './pages/Calendar'
 import Popup from './pages/Popup/Popup'
 import TodoModal from './components/Todo/TodoModal'
 import TodoEditModal from './components/Todo/TodoEditModal'
@@ -83,9 +82,7 @@ const AppContent = () => {
       <div className={`min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 text-slate-900 dark:text-slate-100 transition-all duration-300 ${isModalOpen || isEditModalOpen ? 'blur-sm' : ''}`}>
         <Navbar />
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard onAddTaskClick={openModal} onEditTodo={openEditModal} />} />
-          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/" element={<Dashboard onAddTaskClick={openModal} onEditTodo={openEditModal} />} />
         </Routes>
       </div>
       
