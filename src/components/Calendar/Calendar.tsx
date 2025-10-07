@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
 import { useTodos } from '../../contexts/TodoContext'
-import { shouldShowTaskForDate } from '../../utils/todoDateUtils'
 import type { Todo } from '../../types/todo'
 
 interface CalendarProps {
@@ -15,9 +14,20 @@ const Calendar: React.FC<CalendarProps> = () => {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<CalendarView>('month')
 
-  // Get todos for a specific date
+  // Get todos for a specific date - only show tasks on their actual due date
   const getTodosForDate = (date: Date): Todo[] => {
-    return todos.filter(todo => shouldShowTaskForDate(todo, date))
+    return todos.filter(todo => {
+      // Show tasks without due dates everywhere
+      if (!todo.dueDate) return true
+      
+      // For tasks with due dates, only show on the exact due date
+      const dueDate = new Date(todo.dueDate)
+      dueDate.setHours(0, 0, 0, 0)
+      const checkDate = new Date(date)
+      checkDate.setHours(0, 0, 0, 0)
+      
+      return dueDate.getTime() === checkDate.getTime()
+    })
   }
 
   // Get todos for a week
@@ -121,9 +131,12 @@ const Calendar: React.FC<CalendarProps> = () => {
     const checkDate = new Date(date)
     checkDate.setHours(0, 0, 0, 0)
     
-    return getTodosForDate(date).filter(todo => 
-      !todo.completed && todo.dueDate && todo.dueDate < today
-    ).length
+    // Only show overdue indicator if the date is in the past and has incomplete tasks
+    if (checkDate < today) {
+      return getTodosForDate(date).filter(todo => !todo.completed).length
+    }
+    
+    return 0
   }
 
   return (
@@ -263,7 +276,7 @@ const Calendar: React.FC<CalendarProps> = () => {
                               className={`text-xs p-1 rounded truncate ${
                                 todo.completed
                                   ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 line-through'
-                                  : todo.dueDate && todo.dueDate < new Date() && !todo.completed
+                                  : date < new Date() && !todo.completed
                                   ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                                   : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                               }`}
@@ -320,7 +333,7 @@ const Calendar: React.FC<CalendarProps> = () => {
                               className={`p-3 rounded-lg text-sm ${
                                 todo.completed
                                   ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 line-through'
-                                  : todo.dueDate && todo.dueDate < new Date() && !todo.completed
+                                  : date < new Date() && !todo.completed
                                   ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                                   : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                               }`}

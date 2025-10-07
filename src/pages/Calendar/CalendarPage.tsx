@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
 import { useTodos } from '../../contexts/TodoContext'
-import { shouldShowTaskForDate } from '../../utils/todoDateUtils'
 import CalendarDayModal from '../../components/Calendar/CalendarDayModal'
 import type { Todo } from '../../types/todo'
 
@@ -14,9 +13,20 @@ const CalendarPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [isDayModalOpen, setIsDayModalOpen] = useState(false)
 
-  // Get todos for a specific date
+  // Get todos for a specific date - only show tasks on their exact due date
   const getTodosForDate = (date: Date): Todo[] => {
-    return todos.filter(todo => shouldShowTaskForDate(todo, date))
+    return todos.filter(todo => {
+      // Show tasks without due dates everywhere
+      if (!todo.dueDate) return true
+      
+      // For tasks with due dates, only show on the exact due date
+      const dueDate = new Date(todo.dueDate)
+      dueDate.setHours(0, 0, 0, 0)
+      const checkDate = new Date(date)
+      checkDate.setHours(0, 0, 0, 0)
+      
+      return dueDate.getTime() === checkDate.getTime()
+    })
   }
 
   // Get todos for a week
@@ -120,9 +130,12 @@ const CalendarPage: React.FC = () => {
     const checkDate = new Date(date)
     checkDate.setHours(0, 0, 0, 0)
     
-    return getTodosForDate(date).filter(todo => 
-      !todo.completed && todo.dueDate && todo.dueDate < today
-    ).length
+    // Only show overdue indicator if the date is in the past and has incomplete tasks
+    if (checkDate < today) {
+      return getTodosForDate(date).filter(todo => !todo.completed).length
+    }
+    
+    return 0
   }
 
   const handleDayClick = (date: Date) => {

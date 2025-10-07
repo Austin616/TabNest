@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
 import { X, Plus, Clock, Calendar as CalendarIcon, Bell } from 'lucide-react'
 import { useTodos } from '../../contexts/TodoContext'
-import { shouldShowTaskForDate } from '../../utils/todoDateUtils'
-import TodoModal from '../Todo/TodoModal'
 import type { Todo } from '../../types/todo'
 
 interface CalendarDayModalProps {
@@ -13,11 +11,29 @@ interface CalendarDayModalProps {
 
 const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, selectedDate }) => {
   const { todos, addTodo, toggleTodoComplete } = useTodos()
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isAddingTask, setIsAddingTask] = useState(false)
+  const [newTask, setNewTask] = useState({
+    text: '',
+    description: '',
+    dueTime: '',
+    reminderDays: ''
+  })
 
   if (!isOpen || !selectedDate) return null
 
-  const dayTodos = todos.filter(todo => shouldShowTaskForDate(todo, selectedDate))
+  // Only show tasks on their exact due date (no reminder logic)
+  const dayTodos = todos.filter(todo => {
+    // Show tasks without due dates everywhere
+    if (!todo.dueDate) return true
+    
+    // For tasks with due dates, only show on the exact due date
+    const dueDate = new Date(todo.dueDate)
+    dueDate.setHours(0, 0, 0, 0)
+    const checkDate = new Date(selectedDate)
+    checkDate.setHours(0, 0, 0, 0)
+    
+    return dueDate.getTime() === checkDate.getTime()
+  })
   const completedTodos = dayTodos.filter(todo => todo.completed)
   const pendingTodos = dayTodos.filter(todo => !todo.completed)
   const overdueTodos = pendingTodos.filter(todo => 
@@ -53,9 +69,30 @@ const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, se
     })
   }
 
-  const handleAddTodo = (newTodo: Omit<Todo, 'id' | 'createdAt'>) => {
+  const handleAddTask = () => {
+    if (newTask.text.trim() === '') return
+
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+
+    const newTodo: Omit<Todo, 'id' | 'createdAt'> = {
+      text: newTask.text.trim(),
+      description: newTask.description.trim() || undefined,
+      completed: false,
+      dueDate: selectedDate || today,
+      dueTime: newTask.dueTime.trim() || undefined,
+      reminderDays: newTask.reminderDays ? parseInt(newTask.reminderDays) : undefined,
+      tags: []
+    }
+
     addTodo(newTodo)
-    setIsAddModalOpen(false)
+    setNewTask({ text: '', description: '', dueTime: '', reminderDays: '' })
+    setIsAddingTask(false)
+  }
+
+  const handleCancelAdd = () => {
+    setNewTask({ text: '', description: '', dueTime: '', reminderDays: '' })
+    setIsAddingTask(false)
   }
 
   const TaskItem: React.FC<{ todo: Todo }> = ({ todo }) => (
@@ -143,13 +180,15 @@ const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, se
             </div>
             
             <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Task</span>
-              </button>
+              {!isAddingTask && (
+                <button
+                  onClick={() => setIsAddingTask(true)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Task</span>
+                </button>
+              )}
               
               <button
                 onClick={onClose}
@@ -160,23 +199,106 @@ const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, se
             </div>
           </div>
 
+          {/* Inline Add Task Form */}
+          {isAddingTask && (
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    Task <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newTask.text}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, text: e.target.value }))}
+                    placeholder="What needs to be done?"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={newTask.description}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Add more details (optional)..."
+                    rows={2}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Due Time
+                    </label>
+                    <input
+                      type="time"
+                      value={newTask.dueTime}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, dueTime: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Show in advance
+                    </label>
+                    <select
+                      value={newTask.reminderDays}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, reminderDays: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Only on due date</option>
+                      <option value="1">1 day before</option>
+                      <option value="2">2 days before</option>
+                      <option value="3">3 days before</option>
+                      <option value="7">1 week before</option>
+                      <option value="14">2 weeks before</option>
+                      <option value="30">1 month before</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-end space-x-2">
+                    <button
+                      onClick={handleAddTask}
+                      disabled={newTask.text.trim() === ''}
+                      className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                      Add Task
+                    </button>
+                    <button
+                      onClick={handleCancelAdd}
+                      className="px-4 py-2 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-300 text-sm font-medium rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Content */}
           <div className="p-6 overflow-auto max-h-[calc(90vh-140px)]">
-            {dayTodos.length === 0 ? (
+            {dayTodos.length === 0 && !isAddingTask ? (
               <div className="text-center py-12">
                 <CalendarIcon className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
                 <p className="text-slate-500 dark:text-slate-400 mb-4">
                   No tasks scheduled for this day
                 </p>
                 <button
-                  onClick={() => setIsAddModalOpen(true)}
+                  onClick={() => setIsAddingTask(true)}
                   className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Add Your First Task</span>
                 </button>
               </div>
-            ) : (
+            ) : dayTodos.length > 0 ? (
               <div className="space-y-4">
                 {/* Overdue Tasks */}
                 {overdueTodos.length > 0 && (
@@ -223,18 +345,10 @@ const CalendarDayModal: React.FC<CalendarDayModalProps> = ({ isOpen, onClose, se
                   </div>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
-
-      {/* Add Task Modal */}
-      <TodoModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAddTodo={handleAddTodo}
-        currentDate={selectedDate}
-      />
     </>
   )
 }

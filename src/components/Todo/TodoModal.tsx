@@ -6,13 +6,14 @@ interface TodoModalProps {
   isOpen: boolean
   onClose: () => void
   onAddTodo: (todo: Omit<Todo, 'id' | 'createdAt'>) => void
-  currentDate: Date
+  currentDate?: Date
 }
 
 const TodoModal: React.FC<TodoModalProps> = ({
   isOpen,
   onClose,
-  onAddTodo
+  onAddTodo,
+  currentDate
 }) => {
   const [text, setText] = useState('')
   const [description, setDescription] = useState('')
@@ -25,11 +26,12 @@ const TodoModal: React.FC<TodoModalProps> = ({
     if (isOpen) {
       setText('')
       setDescription('')
-      setDueDate(new Date().toISOString().split('T')[0]) // Reset to today
+      // Use currentDate if provided, otherwise default to today
+      setDueDate(formatDateForInput(currentDate || new Date()))
       setDueTime('')
       setReminderDays('')
     }
-  }, [isOpen])
+  }, [isOpen, currentDate])
 
   // Handle escape key
   useEffect(() => {
